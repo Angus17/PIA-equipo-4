@@ -71,6 +71,7 @@ int main(void)
     struct Datos_Empleados empleados;
     struct Datos_Proveedores proveedores;
     struct Datos_Articulos articulos;
+    int total_articulos = 0, total_clientes = 0, total_proveedores = 0, total_empleados = 0;
     int opcion;
 
     setlocale(LC_CTYPE, "es_MX.UTF-8");
@@ -129,7 +130,7 @@ int main(void)
                 case 1:
                     if (false)
                     {
-                        /* code */
+                        capturar_articulos(file_articulos, &articulos, &total_articulos);
                     }
                     else
                     {
@@ -140,7 +141,7 @@ int main(void)
                 case 2:
                     if (false)
                     {
-                        /* code */
+                        capturar_clientes(file_clientes, &clientes, &total_clientes);
                     }
                     else
                     {
@@ -151,7 +152,7 @@ int main(void)
                 case 3:
                     if (false)
                     {
-                        /* code */
+                        capturar_empleados(file_empleados, &empleados, &total_empleados);
                     }
                     else
                     {
@@ -162,7 +163,7 @@ int main(void)
                 case 4:
                     if (false)
                     {
-                        /* code */
+                        capturar_proveedores(file_proveedor, &proveedores, &total_proveedores);
                     }
                     else
                     {
