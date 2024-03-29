@@ -257,7 +257,7 @@ void capturar_articulos(FILE *arcivo_articulos, struct Datos_Articulos *data, in
             {
                 printf("Número de artículo: ");
                 limpiar_buffer_STDIN();
-            } while (scanf("%d", data->numero_articulo));
+            } while (scanf("%d", &data->numero_articulo));
             
             if (data->numero_articulo <= 0)
             
