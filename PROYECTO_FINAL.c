@@ -74,7 +74,7 @@ int main(void)
     int total_articulos = 0, total_clientes = 0, total_proveedores = 0, total_empleados = 0;
     int opcion;
 
-    setlocale(LC_CTYPE, "es_MX.UTF-8");
+    setlocale(LC_ALL, "es_MX.UTF-8");
 
     file_articulos =  fopen("Files_muebleria/articulos.dat", "rb+");
     file_clientes = fopen("Files_muebleria/clientes.dat", "rb+");
@@ -128,7 +128,7 @@ int main(void)
             switch (opcion)
             {
                 case 1:
-                    if (false)
+                    if (true)
                     {
                         capturar_articulos(file_articulos, &articulos, &total_articulos);
                     }
@@ -150,7 +150,7 @@ int main(void)
                 break;
 
                 case 3:
-                    if (false)
+                    if (total_empleados < 20)
                     {
                         capturar_empleados(file_empleados, &empleados, &total_empleados);
                     }
@@ -224,12 +224,15 @@ int main(void)
             }
             
         } while (opcion != 9);
+
+        limpiar_terminal();
+        puts("Operación finalizada con éxito");
     }
     
 
 }
 
-void capturar_articulos(FILE *arcivo_articulos, struct Datos_Articulos *data, int *articulos_registrados)
+void capturar_articulos(FILE *arcivo_articulos, struct Datos_Articulos *data_articulos, int *articulos_registrados)
 {
     char respuesta[3];
 
@@ -238,8 +241,11 @@ void capturar_articulos(FILE *arcivo_articulos, struct Datos_Articulos *data, in
         limpiar_terminal();
 
         printf("Desea agregar artículos? Si/No: ");
+        fflush(stdout);
         limpiar_buffer_STDIN();
-        scanf(" %s", respuesta);
+        fgets(respuesta, 3, stdin);
+
+        respuesta[strcspn(respuesta, "\n")] = '\0';
         
         convertir_cadena_a_minuscula(respuesta);
 
@@ -257,13 +263,13 @@ void capturar_articulos(FILE *arcivo_articulos, struct Datos_Articulos *data, in
             {
                 printf("Número de artículo: ");
                 limpiar_buffer_STDIN();
-            } while (scanf("%d", &data->numero_articulo));
+            } while (scanf("%d", &data_articulos->numero_articulo));
             
-            if (data->numero_articulo <= 0)
+            if (data_articulos->numero_articulo <= 0)
             
                 validar_errores_por_SO();
             
-        } while (data->numero_articulo <= 0);
+        } while (data_articulos->numero_articulo <= 0);
 
         do
         {
@@ -273,6 +279,42 @@ void capturar_articulos(FILE *arcivo_articulos, struct Datos_Articulos *data, in
         
     }
     
+
+
+}
+
+void capturar_clientes(FILE *, struct Datos_Empleados *, int *)
+{
+
+
+
+}
+
+void capturar_empleados(FILE *archivo_empleados, struct Datos_Clientes *data_clientes, int *empleados_registrados)
+{
+
+
+
+}
+
+
+void capturar_proveedores(FILE *, struct Datos_Proveedores *, int *)
+{
+
+
+
+}
+
+void controlar_ventas()
+{
+
+
+
+}
+
+void controlar_compras()
+{
+
 
 
 }
@@ -290,7 +332,7 @@ void convertir_cadena_a_minuscula(char *caracter)
 void limpiar_buffer_STDIN()
 {
     #if defined(_WIN32) || defined(_WIN64)
-        fflush(stdin);
+        rewind(stdin);
     #elif __linux__
         __fpurge(stdin);
     #endif
