@@ -21,7 +21,7 @@ struct Direcciones_Fecha
 struct Datos_Articulos
 {
     int numero_articulo, numero_proveedor, punto_reorden; // Mayor a cero, proveedores a lo mucho 10
-    char descripcion_articulo[100]; // Validar letras, numeros, espacios
+    char descripcion_articulo[200]; // Validar letras, numeros, espacios
     long int inventario; //Mayor o igual a cero
     double precio_compra, precio_venta;
 };
@@ -51,7 +51,25 @@ struct Datos_Empleados
     int numero_empleado; // 1000 - 10000
     char nombre_empleado[50]; // Letras, espacios
 };
+
+struct Contador_Datos
+{
+    int *articulos_neto, *clientes_neto;
+    int *empleados_neto, *proveedores_neto;
+
+};
+
+struct Conjunto_Datos
+{
+    struct Datos_Articulos data_articulos;
+    struct Datos_Clientes data_clientes;
+    struct Datos_Empleados data_empleados;
+    struct Datos_Proveedores data_proveedores;
+
+};
+
 //FUNCIONES PRINCIPALES
+
 void capturar_articulos(FILE *, struct Datos_Articulos *, int *, const char *);
 void capturar_empleados(FILE *, struct Datos_Empleados *, int *, const char *);
 void capturar_clientes(FILE *, struct Datos_Clientes *, int *, const char *);
@@ -60,11 +78,15 @@ void controlar_ventas();
 void controlar_compras();
 
 // VALIDACIONES
+
 void convertir_cadena_a_minuscula(char *);
+bool verificar_existencia_claves(FILE *, struct Conjunto_Datos *, int *);
+bool verificar_datos_existencia(FILE *, struct Contador_Datos *, int *, int *);
 bool validar_cadenas(char *);
 
 
 // FUNCIONES PARA EL SISTEMA
+
 void validar_errores_por_SO();
 void limpiar_buffer_STDIN();
 void limpiar_terminal();
@@ -77,16 +99,17 @@ int main(void)
     struct Datos_Empleados empleados;
     struct Datos_Proveedores proveedores;
     struct Datos_Articulos articulos;
+    struct Contador_Datos datos;
     char *ruta_file_articulos, *ruta_file_empleados, *ruta_file_clientes, *ruta_file_proveedores;
     int total_articulos = 0, total_clientes = 0, total_proveedores = 0, total_empleados = 0;
     int opcion;
 
     setlocale(LC_ALL, "es_MX.UTF-8");
 
-    ruta_file_articulos = malloc(sizeof(char *) * 1000);
-    ruta_file_clientes = malloc(sizeof(char *) * 1000);
-    ruta_file_empleados = malloc(sizeof(char *) * 1000);
-    ruta_file_proveedores = malloc(sizeof(char *) * 1000);
+    ruta_file_articulos = malloc(sizeof(char ) * 1000);
+    ruta_file_clientes = malloc(sizeof(char ) * 1000);
+    ruta_file_empleados = malloc(sizeof(char ) * 1000);
+    ruta_file_proveedores = malloc(sizeof(char ) * 1000);
 
     getcwd( ruta_file_articulos, sizeof( ruta_file_articulos ) * 1000 );
     strcat( ruta_file_articulos, "/Files_muebleria/articulos.dat" );
@@ -118,6 +141,11 @@ int main(void)
         fclose(file_clientes);
         fclose(file_empleados);
         fclose(file_proveedor);
+
+        datos.articulos_neto = &total_articulos;
+        datos.clientes_neto = &total_clientes;
+        datos.empleados_neto = &total_empleados;
+        datos.proveedores_neto = &total_proveedores;
 
         do
         {
@@ -244,11 +272,6 @@ int main(void)
                     free(ruta_file_clientes);
                     free(ruta_file_empleados);
                     free(ruta_file_proveedores);
-
-                    fclose(file_clientes);
-                    fclose(file_articulos);
-                    fclose(file_empleados);
-                    fclose(file_proveedor);
                 break;
             }
 
@@ -268,6 +291,7 @@ int main(void)
 void capturar_articulos(FILE *archivo_articulos, struct Datos_Articulos *data_articulos, int *articulos_registrados, const char *ruta_articulos_file)
 {
     char respuesta[3];
+    bool descripcion_correcta;
 
     archivo_articulos = fopen(ruta_articulos_file, "rb+");
 
@@ -282,7 +306,6 @@ void capturar_articulos(FILE *archivo_articulos, struct Datos_Articulos *data_ar
             limpiar_terminal();
 
             printf("Desea agregar artículos? Si/No: ");
-            fflush(stdout);
             limpiar_buffer_STDIN();
             fgets(respuesta, 3, stdin);
 
@@ -302,11 +325,13 @@ void capturar_articulos(FILE *archivo_articulos, struct Datos_Articulos *data_ar
             {
                 do
                 {
+                    limpiar_terminal();
+
                     printf("Número de artículo: ");
                     limpiar_buffer_STDIN();
-                } while (scanf("%d", &data_articulos->numero_articulo));
+                } while (scanf("%d", &data_articulos->numero_articulo) != 1);
                 
-                if (data_articulos->numero_articulo <= 0)
+                if (data_articulos->numero_articulo <= 0 || data_articulos->numero_articulo > 100)
                 
                     validar_errores_por_SO();
                 
@@ -314,10 +339,41 @@ void capturar_articulos(FILE *archivo_articulos, struct Datos_Articulos *data_ar
 
             do
             {
+                descripcion_correcta = false;
+
+                limpiar_terminal();
+
+                printf("Descripción del artículo: ");
+                limpiar_buffer_STDIN();
+                fgets(data_articulos->descripcion_articulo, 200, stdin);
+
+                data_articulos->descripcion_articulo[strcspn(data_articulos->descripcion_articulo, "\n")] = '\0';
+
+                if (strlen(data_articulos->descripcion_articulo) > 0)
                 
-            } while (false);
+                    descripcion_correcta = validar_cadenas(data_articulos->descripcion_articulo);
+
+            } while (strlen(data_articulos->descripcion_articulo) == 0 || !descripcion_correcta);
+
+            do
+            {
+                do
+                {
+                    limpiar_terminal();
+
+                    printf("Agrega un punto de reorden: ");
+                    limpiar_buffer_STDIN();
+                } while (scanf("%d", &data_articulos->punto_reorden) != 1);
+                
+                if (data_articulos->punto_reorden <= 0)
+                
+                    validar_errores_por_SO();
+                
+            } while (data_articulos->punto_reorden <= 0);
             
             
+            
+            *articulos_registrados++;
         }
     }
     
@@ -362,6 +418,8 @@ void controlar_compras()
 
 }
 
+
+
 void convertir_cadena_a_minuscula(char *caracter)
 {
     while (*caracter != '\0')
@@ -369,6 +427,27 @@ void convertir_cadena_a_minuscula(char *caracter)
         *caracter = tolower(*caracter);
         caracter++;
     }
+}
+
+bool verificar_datos_existencia(FILE *, struct Contador_Datos *, int *, int *)
+{
+
+
+
+}
+
+bool validar_cadenas(char *caracter)
+{
+    while (*caracter != '\0')
+    {
+        if (!isalnum(*caracter) && *caracter != 32)
+        
+            return false;
+        
+        caracter++;
+    }
+    
+    return true;
 }
 
 // Limpia buffer STDIN tanto para sistemas Windows como para UNIX/Linux

@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <locale.h>
 
 struct Datos_Articulos
@@ -42,33 +44,67 @@ struct Datos_Empleados
 int main(void)
 {
     FILE *file_articulos, *file_proveedor, *file_clientes, *file_empleados;
-    struct Datos_Clientes clientes;
-    struct Datos_Empleados empleados;
-    struct Datos_Proveedores proveedores;
-    struct Datos_Articulos articulos;
+    struct Datos_Articulos articulos = {0, 0, 0, "", 0L, 0.0, 0.0};
+    struct Datos_Proveedores proveedores = {0, "", "", "", 0, 0, 0, "", 0.0, 0.0};
+    struct Datos_Clientes clientes = {0, "", "", "", 0.0, 0, 0, 0, ""};
+    struct Datos_Empleados empleados = {0, "", "", 0, 0, 0, ""};
+    int i;
+    char *ruta_file_articulos, *ruta_file_empleados, *ruta_file_clientes, *ruta_file_proveedores;
 
     setlocale(LC_CTYPE, "es_MX.UTF-8");
 
-    file_articulos =  fopen("Files_muebleria/articulos.dat","wb");
-    file_clientes = fopen("Files_muebleria/clientes.dat","wb");
-    file_empleados = fopen("Files_muebleria/empleados.dat","wb");
-    file_proveedor = fopen("Files_muebleria/proveedores.dat","wb");
+    ruta_file_articulos = malloc(sizeof(char ) * 1000);
+    ruta_file_clientes = malloc(sizeof(char ) * 1000);
+    ruta_file_empleados = malloc(sizeof(char ) * 1000);
+    ruta_file_proveedores = malloc(sizeof(char ) * 1000);
+
+    getcwd( ruta_file_articulos, sizeof( ruta_file_articulos ) * 1000 );
+    strcat( ruta_file_articulos, "/Files_muebleria/articulos.dat" );
+
+    getcwd( ruta_file_clientes, sizeof( ruta_file_clientes ) * 1000);
+    strcat( ruta_file_clientes, "/Files_muebleria/clientes.dat");
+
+    getcwd( ruta_file_empleados, sizeof( ruta_file_empleados ) * 1000);
+    strcat( ruta_file_empleados, "/Files_muebleria/empleados.dat");
+
+    getcwd( ruta_file_proveedores, sizeof( ruta_file_proveedores ) * 1000);
+    strcat( ruta_file_proveedores, "/Files_muebleria/proveedores.dat");
+
+    file_articulos =  fopen( ruta_file_articulos, "wb" );
+    file_clientes = fopen( ruta_file_clientes, "wb" );
+    file_empleados = fopen( ruta_file_empleados, "wb" );
+    file_proveedor = fopen( ruta_file_proveedores, "wb" );
 
     if (file_articulos == NULL || 
         file_clientes == NULL || 
         file_empleados == NULL || 
         file_proveedor == NULL)
 
-        puts("Ocurrió un problema al crear los archivos. . .");
+        fprintf( stderr,"Ocurrió un problema al crear los archivos. . .");
 
     else
     {
+        for ( i = 0; i < 100; i++)
+        
+            fwrite(&articulos, sizeof(struct Datos_Articulos), 1, file_articulos);
+        
+        for ( i = 0; i < 20; i++)
+        
+            fwrite(&empleados, sizeof(struct Datos_Empleados), 1, file_empleados);
+        
+        for ( i = 0; i < 10; i++)
+        
+            fwrite(&proveedores, sizeof(struct Datos_Proveedores), 1, file_proveedor);
+        
+        
         fwrite(&clientes, sizeof(struct Datos_Clientes), 1, file_clientes);
-        fwrite(&empleados, sizeof(struct Datos_Empleados), 1, file_empleados);
-        fwrite(&articulos, sizeof(struct Datos_Articulos), 1, file_articulos);
-        fwrite(&proveedores, sizeof(struct Datos_Proveedores), 1, file_proveedor);
 
         puts("Archivos creados exitosamente!");
+
+        free(ruta_file_articulos);
+        free(ruta_file_clientes);
+        free(ruta_file_empleados);
+        free(ruta_file_proveedores);
 
         fclose(file_clientes);
         fclose(file_articulos);
