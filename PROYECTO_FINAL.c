@@ -1,13 +1,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <locale.h>
 #include <regex.h>
 #include <stdbool.h>
+#include <time.h>
 #include <ctype.h>
 #ifdef __linux__
     #include <stdio_ext.h>
 #endif
+
+struct Direcciones_Fecha
+{
+    char direccion[200];
+    char correo_electronico[30];// @ y punto despues
+    int anio, mes, dia; //  >=1950, 1-12 inclusive
+};
 
 struct Datos_Articulos
 {
@@ -19,6 +28,7 @@ struct Datos_Articulos
 
 struct Datos_Proveedores
 {
+    struct Direcciones_Fecha datos;
     int numero_proveedor; //mayor a cero
     char nombre_proveedor[50], rfc[13]; // Letras, espacios; 13 caracteres
     char correo_electronico[30];// @ y punto despues
@@ -29,27 +39,23 @@ struct Datos_Proveedores
 
 struct Datos_Clientes
 {
+    struct Direcciones_Fecha datos;
     int numero_cliente; // Mayor a cero
     char nombre_cliente[50], rfc[13]; // Letras, espacios
-    char correo_electronico[30];// @ y punto despues
     double descuento_cliente; // 0 - 1
-    int anio, mes, dia; // 1950-2006 inclusive, 1-12 inclusive
-    char direccion_cliente[200]; //letras, espacios, numeros
 };
 
 struct Datos_Empleados
 {
+    struct Direcciones_Fecha datos;
     int numero_empleado; // 1000 - 10000
     char nombre_empleado[50]; // Letras, espacios
-    char correo_electronico[30];// @ y punto despues
-    int anio, mes, dia; // 1990 - actual, 
-    char direccion_empleado[200]; //letras, espacios, numeros
 };
 //FUNCIONES PRINCIPALES
-void capturar_articulos(FILE *, struct Datos_Articulos *, int *);
-void capturar_empleados(FILE *, struct Datos_Clientes *, int *);
-void capturar_clientes(FILE *, struct Datos_Empleados *, int *);
-void capturar_proveedores(FILE *, struct Datos_Proveedores *, int *);
+void capturar_articulos(FILE *, struct Datos_Articulos *, int *, const char *);
+void capturar_empleados(FILE *, struct Datos_Empleados *, int *, const char *);
+void capturar_clientes(FILE *, struct Datos_Clientes *, int *, const char *);
+void capturar_proveedores(FILE *, struct Datos_Proveedores *, int *, const char *);
 void controlar_ventas();
 void controlar_compras();
 
@@ -71,15 +77,33 @@ int main(void)
     struct Datos_Empleados empleados;
     struct Datos_Proveedores proveedores;
     struct Datos_Articulos articulos;
+    char *ruta_file_articulos, *ruta_file_empleados, *ruta_file_clientes, *ruta_file_proveedores;
     int total_articulos = 0, total_clientes = 0, total_proveedores = 0, total_empleados = 0;
     int opcion;
 
     setlocale(LC_ALL, "es_MX.UTF-8");
 
-    file_articulos =  fopen("Files_muebleria/articulos.dat", "rb+");
-    file_clientes = fopen("Files_muebleria/clientes.dat", "rb+");
-    file_empleados = fopen("Files_muebleria/empleados.dat", "rb+");
-    file_proveedor = fopen("Files_muebleria/proveedores.dat", "rb+");
+    ruta_file_articulos = malloc(sizeof(char *) * 1000);
+    ruta_file_clientes = malloc(sizeof(char *) * 1000);
+    ruta_file_empleados = malloc(sizeof(char *) * 1000);
+    ruta_file_proveedores = malloc(sizeof(char *) * 1000);
+
+    getcwd( ruta_file_articulos, sizeof( ruta_file_articulos ) * 1000 );
+    strcat( ruta_file_articulos, "/Files_muebleria/articulos.dat" );
+
+    getcwd( ruta_file_clientes, sizeof( ruta_file_clientes ) * 1000);
+    strcat( ruta_file_clientes, "/Files_muebleria/clientes.dat");
+
+    getcwd( ruta_file_empleados, sizeof( ruta_file_empleados ) * 1000);
+    strcat( ruta_file_empleados, "/Files_muebleria/empleados.dat");
+
+    getcwd( ruta_file_proveedores, sizeof( ruta_file_proveedores ) * 1000);
+    strcat( ruta_file_proveedores, "/Files_muebleria/proveedores.dat");
+
+    file_articulos =  fopen( ruta_file_articulos, "rb" );
+    file_clientes = fopen( ruta_file_clientes, "rb" );
+    file_empleados = fopen( ruta_file_empleados, "rb" );
+    file_proveedor = fopen( ruta_file_proveedores, "rb" );
 
     if (file_articulos == NULL || 
         file_clientes == NULL || 
@@ -90,10 +114,10 @@ int main(void)
     
     else
     {
-        rewind(file_articulos);
-        rewind(file_clientes);
-        rewind(file_empleados);
-        rewind(file_proveedor);
+        fclose(file_articulos);
+        fclose(file_clientes);
+        fclose(file_empleados);
+        fclose(file_proveedor);
 
         do
         {
@@ -128,9 +152,9 @@ int main(void)
             switch (opcion)
             {
                 case 1:
-                    if (true)
+                    if (total_articulos < 100)
                     {
-                        capturar_articulos(file_articulos, &articulos, &total_articulos);
+                        capturar_articulos(file_articulos, &articulos, &total_articulos, ruta_file_articulos);
                     }
                     else
                     {
@@ -141,7 +165,7 @@ int main(void)
                 case 2:
                     if (false)
                     {
-                        capturar_clientes(file_clientes, &clientes, &total_clientes);
+                        capturar_clientes(file_clientes, &clientes, &total_clientes, ruta_file_clientes);
                     }
                     else
                     {
@@ -152,7 +176,7 @@ int main(void)
                 case 3:
                     if (total_empleados < 20)
                     {
-                        capturar_empleados(file_empleados, &empleados, &total_empleados);
+                        capturar_empleados(file_empleados, &empleados, &total_empleados, ruta_file_empleados);
                     }
                     else
                     {
@@ -163,7 +187,7 @@ int main(void)
                 case 4:
                     if (false)
                     {
-                        capturar_proveedores(file_proveedor, &proveedores, &total_proveedores);
+                        capturar_proveedores(file_proveedor, &proveedores, &total_proveedores, ruta_file_proveedores);
                     }
                     else
                     {
@@ -216,12 +240,21 @@ int main(void)
                 break;
 
                 case 9:
+                    free(ruta_file_articulos);
+                    free(ruta_file_clientes);
+                    free(ruta_file_empleados);
+                    free(ruta_file_proveedores);
+
                     fclose(file_clientes);
                     fclose(file_articulos);
                     fclose(file_empleados);
                     fclose(file_proveedor);
                 break;
             }
+
+            if (opcion != 9)
+            
+                pausar_terminal();
             
         } while (opcion != 9);
 
@@ -232,73 +265,83 @@ int main(void)
 
 }
 
-void capturar_articulos(FILE *arcivo_articulos, struct Datos_Articulos *data_articulos, int *articulos_registrados)
+void capturar_articulos(FILE *archivo_articulos, struct Datos_Articulos *data_articulos, int *articulos_registrados, const char *ruta_articulos_file)
 {
     char respuesta[3];
 
-    do
-    {
-        limpiar_terminal();
+    archivo_articulos = fopen(ruta_articulos_file, "rb+");
 
-        printf("Desea agregar artículos? Si/No: ");
-        fflush(stdout);
-        limpiar_buffer_STDIN();
-        fgets(respuesta, 3, stdin);
-
-        respuesta[strcspn(respuesta, "\n")] = '\0';
-        
-        convertir_cadena_a_minuscula(respuesta);
-
-        if (strcmp(respuesta, "si") != 0 && strcmp(respuesta, "no") != 0)
-        
-            validar_errores_por_SO();
-        
-    } while (strcmp(respuesta, "si") != 0 && strcmp(respuesta, "no") != 0);
+    if (archivo_articulos == NULL)
     
-    while (strcmp(respuesta, "si") == 0)
+        fprintf(stderr, "ERROR: NO SE PUDO ABRIR CORRECTAMENTE EL ARCHIVO DE ARTICULOS");
+    
+    else
     {
         do
         {
-            do
-            {
-                printf("Número de artículo: ");
-                limpiar_buffer_STDIN();
-            } while (scanf("%d", &data_articulos->numero_articulo));
+            limpiar_terminal();
+
+            printf("Desea agregar artículos? Si/No: ");
+            fflush(stdout);
+            limpiar_buffer_STDIN();
+            fgets(respuesta, 3, stdin);
+
+            respuesta[strcspn(respuesta, "\n")] = '\0';
             
-            if (data_articulos->numero_articulo <= 0)
+            convertir_cadena_a_minuscula(respuesta);
+
+            if (strcmp(respuesta, "si") != 0 && strcmp(respuesta, "no") != 0)
             
                 validar_errores_por_SO();
             
-        } while (data_articulos->numero_articulo <= 0);
-
-        do
+        } while (strcmp(respuesta, "si") != 0 && strcmp(respuesta, "no") != 0);
+        
+        while (strcmp(respuesta, "si") == 0 && *articulos_registrados < 100)
         {
+            do
+            {
+                do
+                {
+                    printf("Número de artículo: ");
+                    limpiar_buffer_STDIN();
+                } while (scanf("%d", &data_articulos->numero_articulo));
+                
+                if (data_articulos->numero_articulo <= 0)
+                
+                    validar_errores_por_SO();
+                
+            } while (data_articulos->numero_articulo <= 0);
+
+            do
+            {
+                
+            } while (false);
             
-        } while (false);
-        
-        
+            
+        }
     }
+    
     
 
 
 }
 
-void capturar_clientes(FILE *, struct Datos_Empleados *, int *)
+void capturar_clientes(FILE *archivo_clientes, struct Datos_Clientes *data_clientes, int *clientes_registrados, const char *ruta_clientes_file)
 {
 
 
 
 }
 
-void capturar_empleados(FILE *archivo_empleados, struct Datos_Clientes *data_clientes, int *empleados_registrados)
+void capturar_empleados(FILE *archivo_empleados, struct Datos_Empleados *data_empleados, int *empleados_registrados, const char *ruta_empleados_file)
 {
-
+    
 
 
 }
 
 
-void capturar_proveedores(FILE *, struct Datos_Proveedores *, int *)
+void capturar_proveedores(FILE *archivo_proveedores, struct Datos_Proveedores *data_proveedores, int *proveedores_registrados, const char *ruta_proveedores_file)
 {
 
 
