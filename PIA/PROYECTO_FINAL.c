@@ -78,16 +78,16 @@ struct Conjunto_Datos
 
 extern bool create_binary_files(struct Conjunto_Datos *);
 extern void capturar_articulos(struct Conjunto_Datos *);
-extern void capturar_empleados(struct Files_Requeridos *, struct Conjunto_Datos *, int *, const char *);
-extern void capturar_clientes(struct Files_Requeridos *, struct Conjunto_Datos *, int *, const char *);
-extern void capturar_proveedores(struct Files_Requeridos *, struct Conjunto_Datos *, int *, const char *);
+extern void capturar_empleados(struct Conjunto_Datos *);
+extern void capturar_clientes(struct Conjunto_Datos *);
+extern void capturar_proveedores(struct Conjunto_Datos *);
 extern void controlar_ventas();
 extern void controlar_compras();
 
 // VALIDACIONES
 
 extern void convertir_cadena_a_minuscula(char *);
-extern bool verificar_articulo_proveedor(struct );
+extern bool verificar_articulo_proveedor();
 extern bool verificar_existencia_claves(FILE *, struct Conjunto_Datos *, int *);
 extern bool verificar_datos_existencia(FILE *, struct Contador_Datos *, int *, int *);
 extern bool verificar_existencia_proveedor(FILE *, struct Datos_Proveedores *, int *, const char *);
@@ -160,17 +160,17 @@ int main(void)
                     limpiar_terminal();
 
                     printf("* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n\n");
-                    printf("\n* *%45s%28s\n\n", "MENÚ DE OPCIONES", "* *");
+                    printf("* *%45s%28s\n\n", "MENÚ DE OPCIONES", "* *");
                     printf("* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n\n");
-                    printf("%s", "1) Articulos");
-                    printf("%s", "2) Clientes");
-                    printf("%s", "3) Empleados");
-                    printf("%s", "4) Proveedores");
-                    printf("%s", "5) Ventas");
-                    printf("%s", "6) Compras");
-                    printf("%s", "7) Control de inventario");
-                    printf("%s", "8) Reportes");
-                    printf("%s", "9) Salir");
+                    printf("%s\n", "1) Articulos");
+                    printf("%s\n", "2) Clientes");
+                    printf("%s\n", "3) Empleados");
+                    printf("%s\n", "4) Proveedores");
+                    printf("%s\n", "5) Ventas");
+                    printf("%s\n", "6) Compras");
+                    printf("%s\n", "7) Control de inventario");
+                    printf("%s\n", "8) Reportes");
+                    printf("%s\n", "9) Salir");
                     printf("%10s: ", "Opcion");
 
                     limpiar_buffer_STDIN();
@@ -189,21 +189,22 @@ int main(void)
                 case 1:
                     if (datos_struct.data_contador.articulos_neto < 100 && (existencia_proveedores = verificar_existencia_proveedor(datos_struct.data_files.file_proveedor, &datos_struct.data_proveedores, datos_struct.data_contador.proveedores_neto, datos_struct.data_dir.ruta_file_proveedores)))
 
-                        capturar_articulos(&datos_struct.data_files, &datos_struct, &datos_struct.data_contador.articulos_neto, datos_struct.data_dir.ruta_file_articulos);
+                        capturar_articulos(&datos_struct);
 
                     else if (!existencia_proveedores)
 
-                        puts("No hay proveedores en existencia, la muebleria no tiene articulos");
-                    else
+                            puts("No hay proveedores en existencia, la muebleria no tiene articulos");
 
-                        puts("Se han registrado el maximo de articulos en la muebleria!");
+                        else
+
+                            puts("Se han registrado el maximo de articulos en la muebleria!");
 
                     break;
 
                 case 2:
                     if (false)
                     {
-                        capturar_clientes(&datos_struct.data_files, &datos_struct, &datos_struct.data_contador.clientes_neto, datos_struct.data_dir.ruta_file_articulos);
+                        capturar_clientes(&datos_struct);
                     }
                     else
                     {
@@ -214,7 +215,7 @@ int main(void)
                 case 3:
                     if (datos_struct.data_contador.empleados_neto < 20)
                     {
-                        capturar_empleados(&files, &datos_struct, &datos_struct.data_contador.empleados_neto, datos_struct.data_files.file_empleados);
+                        capturar_empleados(&datos_struct);
                     }
                     else
                     {
@@ -225,7 +226,7 @@ int main(void)
                 case 4:
                     if (false)
                     {
-                        capturar_proveedores(&files, &datos_struct, &total_proveedores, ruta_file_proveedores);
+                        capturar_proveedores(&datos_struct);
                     }
                     else
                     {
@@ -282,11 +283,6 @@ int main(void)
                     free(datos_struct.data_dir.ruta_file_clientes);
                     free(datos_struct.data_dir.ruta_file_empleados);
                     free(datos_struct.data_dir.ruta_file_proveedores);
-
-                    fclose(datos_struct.data_files.file_articulos);
-                    fclose(datos_struct.data_files.file_empleados);
-                    fclose(datos_struct.data_files.file_clientes);
-                    fclose(datos_struct.data_files.file_proveedor);
                     break;
                 }
 
@@ -304,7 +300,158 @@ int main(void)
 
 extern bool create_binary_files(struct Conjunto_Datos *data_all)
 {
+    int i;
+    bool entornos_creados = false;
+    struct Datos_Articulos articles = {0, 0, 0, "", 0L, 0.0L, 0.0L};
+    // struct Datos_Clientes customers = {{"", "", 0, 0, 0}, 0, "", "", 0.0L};
+    struct Datos_Proveedores suppliers = {{"", "", 0, 0, 0}, 0, "", "", "", 0, 0, 0, "", 0.0L, 0.0L};
+    struct Datos_Empleados employees = {{"", "", 0, 0, 0}, 0, ""};
 
+
+    do
+    {
+        data_all->data_files.file_articulos = fopen(data_all->data_dir.ruta_file_articulos, "rb");
+        data_all->data_files.file_empleados = fopen(data_all->data_dir.ruta_file_empleados, "rb");
+        data_all->data_files.file_proveedor = fopen(data_all->data_dir.ruta_file_proveedores, "rb");
+
+        if (data_all->data_files.file_articulos == NULL
+            && data_all-> data_files.file_empleados == NULL
+            && data_all->data_files.file_proveedor == NULL)
+        {
+            data_all->data_files.file_articulos = fopen(data_all->data_dir.ruta_file_articulos, "wb");
+            data_all->data_files.file_empleados = fopen(data_all->data_dir.ruta_file_empleados, "wb");
+            data_all->data_files.file_proveedor = fopen(data_all->data_dir.ruta_file_proveedores, "wb");
+
+            if (data_all->data_files.file_articulos == NULL
+                || data_all-> data_files.file_empleados == NULL
+                || data_all->data_files.file_proveedor == NULL)
+            {
+                fprintf(stderr, "ERROR DE ARCHIVOS, INTENTE MAS TARDE. . .");
+                return false;
+            }
+
+            for ( i = 0; i < 100; i++)
+
+                fwrite(&articles, sizeof(articles), 1, data_all->data_files.file_articulos);
+
+            for ( i = 0; i < 10; i++)
+
+                fwrite(&suppliers, sizeof(suppliers), 1, data_all->data_files.file_proveedor);
+
+            for ( i = 0; i < 20; i++)
+
+                fwrite(&employees, sizeof(employees), 1, data_all->data_files.file_empleados);
+
+            fclose(data_all->data_files.file_articulos);
+            fclose(data_all->data_files.file_proveedor);
+            fclose(data_all->data_files.file_empleados);
+
+            puts("ENTORNOS BINARIOS CREADOS CORRECTAMENTE!");
+            pausar_terminal();
+        }
+        else if (data_all->data_files.file_articulos == NULL)
+            {
+                data_all->data_files.file_articulos = fopen(data_all->data_dir.ruta_file_articulos, "wb");
+
+                if (data_all->data_files.file_articulos == NULL
+                    || data_all->data_files.file_proveedor == NULL)
+                {
+                    fprintf(stderr, "ERROR DE ARCHIVOS, INTENTE MAS TARDE. . .");
+                    return false;
+                }
+
+                for ( i = 0; i < 100; i++)
+
+                    fwrite(&articles, sizeof(articles), 1, data_all->data_files.file_articulos);
+
+                fclose(data_all->data_files.file_articulos);
+            }
+            else if (data_all->data_files.file_empleados == NULL)
+                {
+                    data_all->data_files.file_empleados = fopen(data_all->data_dir.ruta_file_empleados, "wb");
+
+                    if (data_all-> data_files.file_empleados == NULL)
+                    {
+                        fprintf(stderr, "ERROR DE ARCHIVOS, INTENTE MAS TARDE. . .");
+                        return false;
+                    }
+
+                    for ( i = 0; i < 20; i++)
+
+                        fwrite(&employees, sizeof(employees), 1, data_all->data_files.file_empleados);
+
+                    fclose(data_all->data_files.file_empleados);
+                }
+                else if (data_all->data_files.file_proveedor == NULL)
+                    {
+                        data_all->data_files.file_proveedor = fopen(data_all->data_dir.ruta_file_proveedores, "wb");
+
+                        if (data_all->data_files.file_proveedor == NULL)
+                        {
+                            fprintf(stderr, "ERROR DE ARCHIVOS, INTENTE MAS TARDE. . .");
+                            return false;
+                        }
+
+                        for ( i = 0; i < 10; i++)
+
+                            fwrite(&suppliers, sizeof(suppliers), 1, data_all->data_files.file_proveedor);
+
+                        fclose(data_all->data_files.file_proveedor);
+                    }
+                    else
+                    {
+                        char respuesta[3];
+
+                        do
+                        {
+                            limpiar_terminal();
+
+                            printf("Desea ingresar todos los registros de nuevo? Si/No: ");
+                            limpiar_buffer_STDIN();
+                            scanf(" %s", respuesta);
+
+                            convertir_cadena_a_minuscula(respuesta);
+
+                            if (strcmp(respuesta, "si") != 0 && strcmp(respuesta, "no") != 0)
+
+                                validar_errores_por_SO();
+
+                        } while (strcmp(respuesta, "si") != 0 && strcmp(respuesta, "no") != 0);
+
+                        if (strcmp(respuesta, "si") == 0)
+                        {
+                            data_all->data_files.file_articulos = freopen(data_all->data_dir.ruta_file_articulos, "wb", data_all->data_files.file_articulos);
+                            data_all->data_files.file_empleados = freopen(data_all->data_dir.ruta_file_empleados, "wb", data_all->data_files.file_empleados);
+                            data_all->data_files.file_proveedor = freopen(data_all->data_dir.ruta_file_proveedores, "wb", data_all->data_files.file_proveedor);
+
+                            for ( i = 0; i < 100; i++)
+
+                                fwrite(&articles, sizeof(articles), 1, data_all->data_files.file_articulos);
+
+                            for ( i = 0; i < 10; i++)
+
+                                fwrite(&suppliers, sizeof(suppliers), 1, data_all->data_files.file_proveedor);
+
+                            for ( i = 0; i < 20; i++)
+
+                                fwrite(&employees, sizeof(employees), 1, data_all->data_files.file_empleados);
+
+                            fclose(data_all->data_files.file_articulos);
+                            fclose(data_all->data_files.file_proveedor);
+                            fclose(data_all->data_files.file_empleados);
+                        }
+
+                    }
+
+        if (data_all->data_files.file_articulos != NULL
+            && data_all-> data_files.file_empleados != NULL
+            && data_all->data_files.file_proveedor != NULL)
+
+            entornos_creados = true;
+
+    } while (!entornos_creados);
+
+    return true;
 }
 
 extern void capturar_articulos(struct Conjunto_Datos *data)
@@ -402,9 +549,9 @@ extern void capturar_articulos(struct Conjunto_Datos *data)
                     {
                         limpiar_terminal();
 
-                        printf("Ingresa el numero de proveedor que maneja el articulo %d: ");
+                        printf("Ingresa el numero de proveedor que maneja el articulo %d: ", data->data_articulos.numero_articulo);
                         limpiar_buffer_STDIN();
-                    } while (scanf("%d", data->data_articulos.numero_proveedor) != 1);
+                    } while (scanf("%d", &data->data_articulos.numero_proveedor) != 1);
 
                     if (data->data_articulos.numero_proveedor < 1)
 
@@ -455,15 +602,39 @@ extern void capturar_articulos(struct Conjunto_Datos *data)
     }
 }
 
-extern void capturar_clientes(struct Files_Requeridos *archivos, struct Conjunto_Datos *data, int *clientes_registrados, const char *ruta_clientes_file)
+extern void capturar_clientes(struct Conjunto_Datos *data)
+{
+    char existencia_cliente[3];
+
+    do
+    {
+        limpiar_terminal();
+
+        printf("Desea ingresar clientes? Si/No: ");
+        limpiar_buffer_STDIN();
+        fgets(existencia_cliente, sizeof(existencia_cliente), stdin);
+
+        existencia_cliente[strcspn(existencia_cliente, "\n")] = '\0';
+
+        convertir_cadena_a_minuscula(existencia_cliente);
+
+        if (strcmp(existencia_cliente, "si") != 0 && strcmp(existencia_cliente, "no") != 0)
+
+            validar_errores_por_SO();
+    } while (strcmp(existencia_cliente, "si") != 0 && strcmp(existencia_cliente, "no") != 0);
+    
+    if (strcmp(existencia_cliente, "si") == 0)
+    {
+        data->data_files.file_clientes = fopen(data->data_dir.ruta_file_clientes, "rb+");
+    }
+    
+}
+
+extern void capturar_empleados(struct Conjunto_Datos *data)
 {
 }
 
-extern void capturar_empleados(struct Files_Requeridos *archivos, struct Conjunto_Datos *data, int *empleados_registrados, const char *ruta_empleados_file)
-{
-}
-
-extern void capturar_proveedores(struct Files_Requeridos *archivos, struct Conjunto_Datos *data, int *proveedores_registrados, const char *ruta_proveedores_file)
+extern void capturar_proveedores(struct Conjunto_Datos *data)
 {
 }
 
