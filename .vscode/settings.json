@@ -64,6 +64,8 @@
     "ctype.h": "c",
     "time.h": "c",
     "unistd.h": "c",
-    "stdio.h": "c"
+    "stdio.h": "c",
+    "cabeceras.h": "c",
+    "locale.h": "c"
   }
 }
