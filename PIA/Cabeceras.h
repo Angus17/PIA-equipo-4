@@ -8,7 +8,7 @@
 #include <time.h>
 #include <ctype.h>
 
-#if  defined(__linux__)
+#ifdef __linux__
     #include <stdio_ext.h>
 #endif
 
