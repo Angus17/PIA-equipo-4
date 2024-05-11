@@ -58,6 +58,9 @@ struct Directorios
     char *ruta_file_empleados;
     char *ruta_file_clientes;
     char *ruta_file_proveedores;
+    char *ruta_file_control_compras;
+    char *ruta_file_control_ventas;
+    char *ruta_file_control_inventarios;
 };
 
 struct Conjunto_Datos
@@ -78,9 +81,9 @@ extern void capturar_articulos(struct Conjunto_Datos *);
 extern void capturar_empleados(struct Conjunto_Datos *);
 extern void capturar_clientes(struct Conjunto_Datos *);
 extern void capturar_proveedores(struct Conjunto_Datos *);
-extern void controlar_ventas();
-extern void controlar_compras();
-extern void controlar_inventario();
+extern void controlar_ventas(struct Conjunto_Datos *);
+extern void controlar_compras(struct Conjunto_Datos *);
+extern void controlar_inventario(struct Conjunto_Datos *);
 extern void manejar_reportes();
 extern void refrescar_contadores(struct Conjunto_Datos *);
 
@@ -88,7 +91,7 @@ extern void refrescar_contadores(struct Conjunto_Datos *);
 
 extern bool es_bisiesto(const int *);
 extern bool mes_30_dias(const int *);
-extern bool dia_valido(const int *, const int *, const int *);
+extern bool dia_valido(const int *, const int *, const int *, const int *);
 extern void convertir_cadena_a_minuscula(char *);
 extern bool verificar_articulo_proveedor();
 extern bool verificar_existencia_claves(FILE *, int *, const int *);
@@ -142,13 +145,58 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    datos_struct.data_dir.ruta_file_proveedores = (char *) malloc(sizeof(char) * MAX_BYTES);
+    datos_struct.data_dir.ruta_file_proveedores = (char *) malloc(MAX_BYTES);
 
     if (datos_struct.data_dir.ruta_file_proveedores == NULL)
     {
         free(datos_struct.data_dir.ruta_file_articulos);
         free(datos_struct.data_dir.ruta_file_clientes);
         free(datos_struct.data_dir.ruta_file_empleados);
+
+        fprintf(stderr, "ERROR DE MEMORIA, INTENTA MAS TARDE. . .");
+
+        return EXIT_FAILURE;
+    }
+
+    datos_struct.data_dir.ruta_file_control_compras = (char *) malloc(MAX_BYTES);
+
+    if (datos_struct.data_dir.ruta_file_control_compras == NULL)
+    {
+        free(datos_struct.data_dir.ruta_file_articulos);
+        free(datos_struct.data_dir.ruta_file_clientes);
+        free(datos_struct.data_dir.ruta_file_empleados);
+        free(datos_struct.data_dir.ruta_file_proveedores);
+
+        fprintf(stderr, "ERROR DE MEMORIA, INTENTA MAS TARDE. . .");
+
+        return EXIT_FAILURE;
+    }
+
+    datos_struct.data_dir.ruta_file_control_ventas = (char *) malloc(MAX_BYTES);
+
+    if (datos_struct.data_dir.ruta_file_control_ventas == NULL)
+    {
+        free(datos_struct.data_dir.ruta_file_articulos);
+        free(datos_struct.data_dir.ruta_file_clientes);
+        free(datos_struct.data_dir.ruta_file_empleados);
+        free(datos_struct.data_dir.ruta_file_proveedores);
+        free(datos_struct.data_dir.ruta_file_control_compras);
+
+        fprintf(stderr, "ERROR DE MEMORIA, INTENTA MAS TARDE. . .");
+
+        return EXIT_FAILURE;
+    }
+
+    datos_struct.data_dir.ruta_file_control_inventarios = (char *) malloc(MAX_BYTES);
+
+    if (datos_struct.data_dir.ruta_file_control_ventas == NULL)
+    {
+        free(datos_struct.data_dir.ruta_file_articulos);
+        free(datos_struct.data_dir.ruta_file_clientes);
+        free(datos_struct.data_dir.ruta_file_empleados);
+        free(datos_struct.data_dir.ruta_file_proveedores);
+        free(datos_struct.data_dir.ruta_file_control_compras);
+        free(datos_struct.data_dir.ruta_file_control_ventas);
 
         fprintf(stderr, "ERROR DE MEMORIA, INTENTA MAS TARDE. . .");
 
@@ -166,6 +214,15 @@ int main(void)
 
     getcwd(datos_struct.data_dir.ruta_file_proveedores, sizeof(datos_struct.data_dir.ruta_file_proveedores) * MAX_BYTES);
     strcat(datos_struct.data_dir.ruta_file_proveedores, "/Files_muebleria/proveedores.dat");
+
+    getcwd(datos_struct.data_dir.ruta_file_control_compras , sizeof(datos_struct.data_dir.ruta_file_control_compras) * MAX_BYTES);
+    strcat(datos_struct.data_dir.ruta_file_control_compras, "/Files_muebleria/control_compras.dat");
+
+    getcwd(datos_struct.data_dir.ruta_file_control_ventas , sizeof(datos_struct.data_dir.ruta_file_control_ventas) * MAX_BYTES);
+    strcat(datos_struct.data_dir.ruta_file_control_ventas, "/Files_muebleria/control_ventas.dat");
+
+    getcwd(datos_struct.data_dir.ruta_file_control_inventarios , sizeof(datos_struct.data_dir.ruta_file_control_inventarios) * MAX_BYTES);
+    strcat(datos_struct.data_dir.ruta_file_control_inventarios, "/Files_muebleria/control_inventario.dat");
 
     if (!create_binary_files(&datos_struct))
     {
@@ -257,7 +314,7 @@ int main(void)
                 break;
 
             case 4:
-                if (false)
+                if (datos_struct.data_contador.proveedores_neto < 10)
                 {
                     capturar_proveedores(&datos_struct);
                 }
@@ -268,24 +325,24 @@ int main(void)
                 break;
 
             case 5:
-                if (false)
+                if (datos_struct.data_contador.clientes_neto > 0)
                 {
                     /* code */
                 }
                 else
                 {
-                    /* code */
+                    puts("La mueblería no está lista para vender aún. . .");
                 }
                 break;
 
             case 6:
-                if (false)
+                if (datos_struct.data_contador.proveedores_neto > 0)
                 {
                     /* code */
                 }
                 else
                 {
-                    /* code */
+                    puts("No existen proveedores para surtir artículos. . .");
                 }
                 break;
 
@@ -685,16 +742,10 @@ extern void capturar_clientes(struct Conjunto_Datos *data)
     char expresion_2[] = "^Calle #([0-9]+) Colonia ([A-Za-z ]+), Municipio ([A-Za-z ]+), Estado ([A-Za-z ]+)\\.$";
     regex_t regular, regular_2, regular_3;
     bool descripcion_correcta, clave_existente = false;
-    int regex = regcomp(&regular, expresion, REG_EXTENDED), anio, mes;
+    int regex = regcomp(&regular, expresion, REG_EXTENDED);
     int regex_2 = regcomp(&regular_2, expresion_2, REG_EXTENDED);
     int regex_3 = regcomp(&regular_3, expresion_3, REG_EXTENDED);
     const int type_of_file = 2;
-
-    time_t tiempo = time(NULL);
-    struct tm *time_actual = localtime(&tiempo);
-
-    anio = time_actual->tm_year + 1900;
-    mes = time_actual->tm_mon + 1;
 
     do
     {
@@ -832,11 +883,11 @@ extern void capturar_clientes(struct Conjunto_Datos *data)
                         limpiar_buffer_STDIN();
                     } while (scanf("%d", &data->data_clientes.datos.anio) != 1);
 
-                    if (data->data_clientes.datos.anio < 1950 || data->data_clientes.datos.anio > anio)
+                    if (data->data_clientes.datos.anio < 1950 || data->data_clientes.datos.anio > 2006)
 
                         validar_errores_por_SO();
 
-                } while (data->data_clientes.datos.anio < 1950 || data->data_clientes.datos.anio > anio);
+                } while (data->data_clientes.datos.anio < 1950 || data->data_clientes.datos.anio > 2006);
 
                 do
                 {
@@ -848,12 +899,12 @@ extern void capturar_clientes(struct Conjunto_Datos *data)
                         limpiar_buffer_STDIN();
                     } while (scanf("%d", &data->data_clientes.datos.mes) != 1);
 
-                    if ((data->data_clientes.datos.anio == anio && data->data_clientes.datos.mes > mes) || (data->data_clientes.datos.anio < anio && (data->data_clientes.datos.mes < 1 || data->data_clientes.datos.mes > 12)))
+                    if (data->data_clientes.datos.mes < 1 || data->data_clientes.datos.mes > 12)
 
                         validar_errores_por_SO();
 
 
-                } while ((data->data_clientes.datos.anio == anio && data->data_clientes.datos.mes > mes) || (data->data_clientes.datos.anio < anio && (data->data_clientes.datos.mes < 1 || data->data_clientes.datos.mes > 12)));
+                } while (data->data_clientes.datos.mes < 1 || data->data_clientes.datos.mes > 12);
 
                 do
                 {
@@ -865,11 +916,11 @@ extern void capturar_clientes(struct Conjunto_Datos *data)
                         limpiar_buffer_STDIN();
                     } while (scanf("%d", &data->data_clientes.datos.dia) != 1);
 
-                    if (!dia_valido(&data->data_clientes.datos.dia, &data->data_clientes.datos.mes, &data->data_clientes.datos.anio))
+                    if (!dia_valido(&data->data_clientes.datos.dia, &data->data_clientes.datos.mes, &data->data_clientes.datos.anio, &type_of_file))
 
                         validar_errores_por_SO();
 
-                } while (!dia_valido(&data->data_clientes.datos.dia, &data->data_clientes.datos.mes, &data->data_clientes.datos.anio));
+                } while (!dia_valido(&data->data_clientes.datos.dia, &data->data_clientes.datos.mes, &data->data_clientes.datos.anio, &type_of_file));
 
                 do
                 {
@@ -1090,11 +1141,11 @@ extern void capturar_empleados(struct Conjunto_Datos *data)
                         limpiar_buffer_STDIN();
                     } while (scanf("%d", &data->data_empleados.datos.dia) != 1);
 
-                    if (!dia_valido(&data->data_empleados.datos.dia, &data->data_empleados.datos.mes, &data->data_empleados.datos.anio))
+                    if (!dia_valido(&data->data_empleados.datos.dia, &data->data_empleados.datos.mes, &data->data_empleados.datos.anio, &type_of_file))
 
                         validar_errores_por_SO();
 
-                } while (!dia_valido(&data->data_empleados.datos.dia, &data->data_empleados.datos.mes, &data->data_empleados.datos.anio));
+                } while (!dia_valido(&data->data_empleados.datos.dia, &data->data_empleados.datos.mes, &data->data_empleados.datos.anio, &type_of_file));
 
                 do
                 {
@@ -1334,11 +1385,11 @@ extern void capturar_proveedores(struct Conjunto_Datos *data)
                         limpiar_buffer_STDIN();
                     } while (scanf("%d", &data->data_proveedores.datos.dia) != 1);
 
-                    if (!dia_valido(&data->data_proveedores.datos.dia, &data->data_proveedores.datos.mes, &data->data_proveedores.datos.anio))
+                    if (!dia_valido(&data->data_proveedores.datos.dia, &data->data_proveedores.datos.mes, &data->data_proveedores.datos.anio, &type_of_file))
 
                         validar_errores_por_SO();
 
-                } while (!dia_valido(&data->data_proveedores.datos.dia, &data->data_proveedores.datos.mes, &data->data_proveedores.datos.anio));
+                } while (!dia_valido(&data->data_proveedores.datos.dia, &data->data_proveedores.datos.mes, &data->data_proveedores.datos.anio, &type_of_file));
 
                 do
                 {
@@ -1400,22 +1451,22 @@ extern void capturar_proveedores(struct Conjunto_Datos *data)
     regfree(&regular_3);
 }
 
-extern void controlar_ventas()
+extern void controlar_ventas(struct Conjunto_Datos *data)
 {
 
 }
 
-extern void controlar_compras()
+extern void controlar_compras(struct Conjunto_Datos *data)
 {
 
 }
 
-extern void controlar_inventario()
+extern void controlar_inventario(struct Conjunto_Datos *data)
 {
 
 }
 
-extern void manejar_reportes()
+extern void manejar_reportes(struct Conjunto_Datos *data)
 {
 
 }
@@ -1472,7 +1523,7 @@ extern void refrescar_contadores(struct Conjunto_Datos *data)
 
 extern bool es_bisiesto(const int *year)
 {
-    if ( *year % 4 == 0 && (*year % 100 != 0 || *year % 400 == 0) )
+    if ( (*year) % 4 == 0 && ((*year) % 100 != 0 || (*year) % 400 == 0) )
 
         return true;
 
@@ -1499,7 +1550,7 @@ extern bool mes_30_dias(const int *month)
     }
 }
 
-extern bool dia_valido(const int *day, const int *month, const int *year)
+extern bool dia_valido(const int *day, const int *month, const int *year, const int *t_o_f)
 {
     /* if (    ((data->data_clientes.datos.mes == 2 && !es_bisiesto(&data->data_clientes.datos.anio))
         &&  (data->data_clientes.datos.dia < 1 || data->data_clientes.datos.dia > 28)) ||
@@ -1521,13 +1572,28 @@ extern bool dia_valido(const int *day, const int *month, const int *year)
     current_month = fecha_actual->tm_mon + 1;
     current_day = fecha_actual->tm_mday;
 
-    if (    (( (*month) == 2 && !es_bisiesto(year) ) &&  ( (*day) < 1 || (*day) > 28) ) ||
-            ( ( (*month) == 2 && es_bisiesto(year) ) &&  ( (*day) < 1 || (*day) > 29) ) ||
-            (mes_30_dias(month) &&  ((*day) < 1 || (*day) > 30)) ||
-            (!mes_30_dias(month) &&  ((*day) < 1 || (*day) > 31)) ||
-            ((*year) == current_year && (*month) == current_month && (*day) > current_day))
+    switch (*t_o_f)
+    {
+        case 2:
 
-        return false;
+            if (    (( (*month) == 2 && !es_bisiesto(year) ) &&  ( (*day) < 1 || (*day) > 28) ) ||
+                    ( ( (*month) == 2 && es_bisiesto(year) ) &&  ( (*day) < 1 || (*day) > 29) ) ||
+                    (mes_30_dias(month) &&  ((*day) < 1 || (*day) > 30)) ||
+                    (!mes_30_dias(month) &&  ((*day) < 1 || (*day) > 31)))
+
+                return false;
+
+            break;
+
+        default:
+            if (    (( (*month) == 2 && !es_bisiesto(year) ) &&  ( (*day) < 1 || (*day) > 28) ) ||
+                    ( ( (*month) == 2 && es_bisiesto(year) ) &&  ( (*day) < 1 || (*day) > 29) ) ||
+                    (mes_30_dias(month) &&  ((*day) < 1 || (*day) > 30)) ||
+                    (!mes_30_dias(month) &&  ((*day) < 1 || (*day) > 31)) ||
+                    ((*year) == current_year && (*month) == current_month && (*day) > current_day))
+
+                return false;
+    }
 
     return true;
 
