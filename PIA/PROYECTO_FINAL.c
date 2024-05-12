@@ -48,8 +48,8 @@ struct Datos_Control_Ventas
 
 struct Datos_Control_Compras
 {
-    int numero_proveedor, numero_articulo, cantidad;
-    float precio;
+    int id_compra, numero_proveedor, numero_articulo, cantidad;
+    float precio, saldo_pagar;
 };
 
 struct Datos_Control_Inventario
@@ -72,7 +72,6 @@ struct Files_Requeridos
     FILE *file_empleados;
     FILE *file_control_ventas;
     FILE *file_control_compras;
-    FILE *file_control_inventario;
 };
 
 struct Directorios
@@ -83,7 +82,6 @@ struct Directorios
     char *ruta_file_proveedores;
     char *ruta_file_control_compras;
     char *ruta_file_control_ventas;
-    char *ruta_file_control_inventarios;
 };
 
 struct Conjunto_Datos
@@ -102,31 +100,33 @@ struct Conjunto_Datos
 
 // FUNCIONES PRINCIPALES
 
-extern bool create_binary_files(struct Conjunto_Datos *);
-extern void capturar_articulos(struct Conjunto_Datos *);
-extern void capturar_empleados(struct Conjunto_Datos *);
-extern void capturar_clientes(struct Conjunto_Datos *);
-extern void capturar_proveedores(struct Conjunto_Datos *);
-extern void controlar_ventas(struct Conjunto_Datos *);
-extern void controlar_compras(struct Conjunto_Datos *);
-extern void controlar_inventario(struct Conjunto_Datos *);
+extern bool create_binary_files( struct Conjunto_Datos * );
+extern void capturar_articulos( struct Conjunto_Datos * );
+extern void capturar_empleados( struct Conjunto_Datos * );
+extern void capturar_clientes( struct Conjunto_Datos * );
+extern void capturar_proveedores( struct Conjunto_Datos * );
+extern void controlar_ventas( struct Conjunto_Datos * );
+extern void controlar_compras( struct Conjunto_Datos * );
+extern void controlar_inventario( struct Conjunto_Datos * );
 extern void manejar_reportes();
-extern void refrescar_contadores(struct Conjunto_Datos *);
-extern void buscar_precios(struct Conjunto_Datos *, float *);
-extern bool buscar_cantidades(struct Conjunto_Datos *, const int *, const int *);
-extern void calcular_precios_por_cliente(struct Conjunto_Datos *);
+extern void refrescar_contadores( struct Conjunto_Datos * );
+extern void buscar_precios( struct Conjunto_Datos *, float *, const int * );
+extern void calcular_precios( struct Conjunto_Datos *, const int *, const int * );
 
 // VALIDACIONES
 
+extern bool buscar_cantidades(struct Conjunto_Datos *, const int *, const int *);
+extern bool buscar_proveedor_articulo(struct Conjunto_Datos *, int *);
 extern bool es_bisiesto( const int * );
 extern bool mes_30_dias( const int * );
 extern bool dia_valido( const int *, const int *, const int *, const int * );
 extern void convertir_cadena_a_minuscula( char * );
-extern bool verificar_articulo_proveedor();
+extern bool verificar_articulo_punto_reorden(FILE *, struct Datos_Articulos *, const char *, const int *);
 extern bool verificar_existencia_claves( FILE *, int *, const int * );
 extern bool verificar_existencia_proveedor( FILE *, struct Datos_Proveedores *, const int *, const char * );
 extern bool buscar_proveedores( const int *, const int * );
 extern bool validar_cadenas(const char * );
+extern void liberar_memoria_salida_de_error(struct Directorios *);
 
 // FUNCIONES PARA EL SISTEMA
 
@@ -216,22 +216,6 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    datos_struct.data_dir.ruta_file_control_inventarios = (char *) malloc(MAX_BYTES);
-
-    if (datos_struct.data_dir.ruta_file_control_ventas == NULL)
-    {
-        free(datos_struct.data_dir.ruta_file_articulos);
-        free(datos_struct.data_dir.ruta_file_clientes);
-        free(datos_struct.data_dir.ruta_file_empleados);
-        free(datos_struct.data_dir.ruta_file_proveedores);
-        free(datos_struct.data_dir.ruta_file_control_compras);
-        free(datos_struct.data_dir.ruta_file_control_ventas);
-
-        fprintf(stderr, "ERROR DE MEMORIA, INTENTA MAS TARDE. . .");
-
-        return EXIT_FAILURE;
-    }
-
     getcwd(datos_struct.data_dir.ruta_file_articulos, sizeof(datos_struct.data_dir.ruta_file_articulos) * MAX_BYTES);
     strcat(datos_struct.data_dir.ruta_file_articulos, "/Files_muebleria/articulos.dat");
 
@@ -249,9 +233,6 @@ int main(void)
 
     getcwd(datos_struct.data_dir.ruta_file_control_ventas , sizeof(datos_struct.data_dir.ruta_file_control_ventas) * MAX_BYTES);
     strcat(datos_struct.data_dir.ruta_file_control_ventas, "/Files_muebleria/control_ventas.dat");
-
-    getcwd(datos_struct.data_dir.ruta_file_control_inventarios , sizeof(datos_struct.data_dir.ruta_file_control_inventarios) * MAX_BYTES);
-    strcat(datos_struct.data_dir.ruta_file_control_inventarios, "/Files_muebleria/control_inventario.dat");
 
     if (!create_binary_files(&datos_struct))
     {
@@ -1308,7 +1289,7 @@ extern void capturar_proveedores(struct Conjunto_Datos *data)
 {
     char existencia_proveedor[3], expresion[] = "^[A-Za-z0-9._-]+@[a-z]+\\.[a-z]{2,}$";
     char expresion_3[] = "^([A-Z]{4})([0-9]{6})([A-Z0-9]{3})$";
-    char expresion_2[] = "^([A-Za-z0-9]) #([0-9]+) ([A-Za-z ]+), ([A-Za-z ]+), ([A-Za-z ]+)$";
+    char expresion_2[] = "^([A-Za-z0-9]+) #([0-9]+) ([A-Za-z ]+)\\, ([A-Za-z ]+)\\, ([A-Za-z ]+)$";
     regex_t regular, regular_2, regular_3;
     bool descripcion_correcta, clave_existente;
     int regex = regcomp(&regular, expresion, REG_EXTENDED), anio, mes;
@@ -1500,8 +1481,8 @@ extern void capturar_proveedores(struct Conjunto_Datos *data)
                     limpiar_terminal();
 
                     printf("Por último, ingresa su dirección usando el siguiente formato\n"
-                            "NOTA!: Cambia los campos con * con tus datos, e ignorando todos los parentesis\n"
-                            "(Calle #(*tu_numero) Colonia (*tu_colonia), Municipio (*tu_municipio), Estado (*tu_estado).)");
+                            "NOTA!: Cambia los campos entre () ignorando todos los parentesis\n"
+                            "(Calle) #(numero) (Colonia,Fracc...etc.), (Municipio), (Estado):\n\n");
                     limpiar_buffer_STDIN();
                     fgets(data->data_proveedores.datos.direccion, sizeof(data->data_proveedores.datos.direccion), stdin);
 
@@ -1517,7 +1498,7 @@ extern void capturar_proveedores(struct Conjunto_Datos *data)
 
                 data->data_contador.proveedores_neto++;
 
-                fseek(data->data_files.file_proveedor, data->data_contador.proveedores_neto * sizeof(data->data_proveedores), SEEK_SET);
+                fseek(data->data_files.file_proveedor, data->data_proveedores.numero_proveedor * sizeof(data->data_proveedores), SEEK_SET);
                 fwrite(&data->data_proveedores, sizeof(data->data_proveedores), 1, data->data_files.file_proveedor);
 
                 if (data->data_contador.proveedores_neto < 10)
@@ -1559,7 +1540,7 @@ extern void controlar_ventas(struct Conjunto_Datos *data)
 {
     char existencia_ventas[3], facturar[3], existencia_articulos[3];
     bool cliente_actual = true, clave_existente = false, cantidad_existente = false, empleado_actual = true;
-    const int file_articulos = 1, file_clientes = 2, file_empleados = 4;
+    const int file_articulos = 1, file_clientes = 2, file_empleados = 4, file_ventas = 1;
     float precio = 0.0;
 
     data->data_files.file_control_ventas = fopen(data->data_dir.ruta_file_control_ventas, "rb+");
@@ -1588,7 +1569,7 @@ extern void controlar_ventas(struct Conjunto_Datos *data)
 
         } while (strcmp(existencia_ventas, "si") != 0 && strcmp(existencia_ventas, "no") != 0);
 
-        while (strcmp(existencia_ventas, "si") == 0)
+        while (strcmp(existencia_ventas, "si") == 0 || strcmp(existencia_articulos, "si") == 0)
         {
             if (cliente_actual)
             {
@@ -1681,7 +1662,8 @@ extern void controlar_ventas(struct Conjunto_Datos *data)
 
             } while (data->data_ventas.cantidad < 1 || !cantidad_existente);
 
-            buscar_precios(data, &precio);
+            buscar_precios(data, &precio, &file_ventas);
+
             printf("Precio neto: $%.2f\n\n", precio);
             pausar_terminal();
 
@@ -1740,11 +1722,9 @@ extern void controlar_ventas(struct Conjunto_Datos *data)
                 cliente_actual = true;
                 empleado_actual = true;
 
-                calcular_precios_por_cliente(data);
+                calcular_precios(data, &file_ventas, NULL);
 
                 limpiar_terminal();
-
-                printf("* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n\n");
 
                 data->data_files.file_clientes = fopen(data->data_dir.ruta_file_clientes, "rb");
 
@@ -1787,6 +1767,8 @@ extern void controlar_ventas(struct Conjunto_Datos *data)
                 {
                     limpiar_terminal();
 
+                    printf("* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n\n");
+
                     if (data->data_files.file_clientes == NULL)
 
                         printf("%40s%d\n\n", "FACTURA DE CLIENTE #", data->data_ventas.numero_cliente);
@@ -1824,6 +1806,19 @@ extern void controlar_ventas(struct Conjunto_Datos *data)
                     printf("\n\n* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n\n");
                 }
 
+                data->data_files.file_articulos = fopen(data->data_dir.ruta_file_articulos, "rb+");
+
+                if (data->data_files.file_articulos == NULL)
+
+                    liberar_memoria_salida_de_error(&data->data_dir);
+
+                fseek(data->data_files.file_articulos, data->data_ventas.numero_articulo * sizeof(data->data_articulos), SEEK_SET);
+                fread(&data->data_articulos, sizeof(data->data_articulos), 1, data->data_files.file_articulos);
+
+                data->data_articulos.inventario -= data->data_ventas.cantidad;
+
+                fclose(data->data_files.file_articulos);
+
                 do
                 {
                     limpiar_terminal();
@@ -1852,18 +1847,22 @@ extern void controlar_ventas(struct Conjunto_Datos *data)
 extern void controlar_compras(struct Conjunto_Datos *data)
 {
     char existencia_compras[3], existencia_articulos[3];
-    bool proveedor_actual = true, clave_existente = false, cantidad_existente = false;
-    const int file_articulos = 1, file_proveedores = 3;
+    bool proveedor_actual = true, clave_existente = false, proveedor_que_lo_maneja, punto_reorden_alcanzado = false;
+    const int file_articulos = 1, file_proveedores = 3, file_compras = 2;
     float precio = 0.0;
+    int numero_proveedor;
+    static int numero_compra = 0;
 
     data->data_files.file_control_compras = fopen(data->data_dir.ruta_file_control_compras, "rb+");
 
     if (data->data_files.file_control_compras == NULL)
 
-        fprintf(stderr, "ERROR: NO SE PUDO ABRIR CORRECTAMENTE EL ARCHIVO DE CONTROL DE VENTAS");
+        fprintf(stderr, "ERROR: NO SE PUDO ABRIR CORRECTAMENTE EL ARCHIVO DE CONTROL DE COMPRAS");
 
     else
     {
+
+
         do
         {
             limpiar_terminal();
@@ -1882,11 +1881,14 @@ extern void controlar_compras(struct Conjunto_Datos *data)
 
         } while (strcmp(existencia_compras, "si") != 0 && strcmp(existencia_compras, "no") != 0);
 
-        while (strcmp(existencia_compras, "si") == 0)
+        while (strcmp(existencia_compras, "si") == 0 || strcmp(existencia_articulos, "si") == 0)
         {
             if (proveedor_actual)
             {
                 data->data_compras.precio = 0.0;
+                numero_compra++;
+
+                data->data_compras.id_compra = numero_compra;
 
                 do
                 {
@@ -1929,8 +1931,6 @@ extern void controlar_compras(struct Conjunto_Datos *data)
                     limpiar_buffer_STDIN();
                 } while (scanf("%d", &data->data_compras.numero_articulo) != 1);
 
-                // Recuerden validar que el proveedor maneje el articulo ingresado, usen una funciona que retorne un bool
-
                 if (data->data_compras.numero_articulo < 1 || data->data_compras.numero_articulo > 100)
 
                     validar_errores_por_SO();
@@ -1945,9 +1945,31 @@ extern void controlar_compras(struct Conjunto_Datos *data)
                             puts("El artículo ingresado no existe en el sistema. . .");
                             pausar_terminal();
                         }
+                        else
+                        {
+                            proveedor_que_lo_maneja = buscar_proveedor_articulo(data, &numero_proveedor);
+
+                            if (!proveedor_que_lo_maneja)
+                            {
+                                limpiar_terminal();
+                                puts("El proveedor que seleccionaste no maneja el artículo que pediste. . .");
+                                pausar_terminal();
+                            }
+                            else
+                            {
+                                punto_reorden_alcanzado = verificar_articulo_punto_reorden(data->data_files.file_articulos, &data->data_articulos, data->data_dir.ruta_file_articulos, &data->data_compras.numero_articulo);
+
+                                if (!punto_reorden_alcanzado)
+                                {
+                                    limpiar_terminal();
+                                    puts("El artículo aún no puede ser reordenado. . .");
+                                    pausar_terminal();
+                                }
+                            }
+                        }
                     }
 
-            } while (data->data_compras.numero_articulo < 1 || data->data_compras.numero_articulo > 100 || !clave_existente);
+            } while (data->data_compras.numero_articulo < 1 || data->data_compras.numero_articulo > 100 || !clave_existente || !proveedor_que_lo_maneja || !punto_reorden_alcanzado);
 
             do
             {
@@ -1963,21 +1985,9 @@ extern void controlar_compras(struct Conjunto_Datos *data)
 
                     validar_errores_por_SO();
 
-                else
-                {
-                    cantidad_existente = buscar_cantidades(data, &data->data_compras.numero_articulo, &data->data_compras.cantidad);
+            } while (data->data_compras.cantidad < 1);
 
-                    if (!cantidad_existente)
-                    {
-                        limpiar_terminal();
-                        puts("No manejamos esa cantidad que usted pide. . .");
-                        pausar_terminal();
-                    }
-                }
-
-            } while (data->data_compras.cantidad < 1 || !cantidad_existente);
-
-            buscar_precios(data, &precio);
+            buscar_precios(data, &precio, &file_compras);
             printf("Precio neto: $%.2f\n\n", precio);
             pausar_terminal();
 
@@ -1996,13 +2006,70 @@ extern void controlar_compras(struct Conjunto_Datos *data)
                 if (strcmp(existencia_articulos, "si") != 0 && strcmp(existencia_articulos, "no") != 0)
 
                     validar_errores_por_SO();
+
             } while (strcmp(existencia_articulos, "si") != 0 && strcmp(existencia_articulos, "no") != 0);
 
-            // El resto de la funcion se necesita corregir para que sea de control de compras
-            
+            if (strcmp(existencia_articulos, "si") != 0)
+            {
+                proveedor_actual = true;
+
+                calcular_precios(data, &file_compras, &numero_proveedor);
+
+                limpiar_terminal();
+
+                data->data_files.file_proveedor = fopen(data->data_dir.ruta_file_proveedores, "rb");
+
+                if (data->data_files.file_clientes == NULL)
+
+                    printf("TOTAL DE LA COMPRA AL PROVEEDOR #%d: $%.2f\n\n", numero_proveedor, data->data_compras.precio);
+
+                else
+                {
+                    fseek(data->data_files.file_proveedor, data->data_compras.numero_proveedor * sizeof(data->data_proveedores), SEEK_SET);
+                    fread(&data->data_proveedores, sizeof(data->data_proveedores), 1, data->data_files.file_proveedor);
+
+                    printf("TOTAL DE LA COMPRA AL PROVEEDOR (%s): $%.2f\n\n", data->data_proveedores.nombre_proveedor, data->data_compras.precio);
+
+                }
+
+                data->data_compras.saldo_pagar = data->data_compras.precio;
+
+                fwrite(&data->data_compras, sizeof(data->data_compras), 1, data->data_files.file_control_compras);
+
+                data->data_files.file_articulos = fopen(data->data_dir.ruta_file_articulos, "rb+");
+
+                if (data->data_files.file_articulos == NULL)
+
+                    liberar_memoria_salida_de_error(&data->data_dir);
+
+                fseek(data->data_files.file_articulos, data->data_compras.numero_articulo * sizeof(data->data_articulos), SEEK_SET);
+                fread(&data->data_articulos, sizeof(data->data_articulos), 1, data->data_files.file_articulos);
+
+                data->data_articulos.inventario += data->data_compras.cantidad;
+
+                fclose(data->data_files.file_articulos);
+
+                do
+                {
+                    limpiar_terminal();
+
+                    printf("Agregar más compras? Si/No: ");
+                    limpiar_buffer_STDIN();
+                    fgets(existencia_compras, sizeof(existencia_compras), stdin);
+
+                    existencia_compras[strcspn(existencia_compras, "\n")] = '\0';
+
+                    convertir_cadena_a_minuscula(existencia_compras);
+
+                    if (strcmp(existencia_compras, "si") != 0 && strcmp(existencia_compras, "no") != 0)
+
+                        validar_errores_por_SO();
+
+                } while (strcmp(existencia_compras, "si") != 0 && strcmp(existencia_compras, "no") != 0);
+            }
         }
 
-        fclose(data->data_files.file_control_ventas);
+        fclose(data->data_files.file_control_compras);
 
     }
 
@@ -2010,6 +2077,62 @@ extern void controlar_compras(struct Conjunto_Datos *data)
 
 extern void controlar_inventario(struct Conjunto_Datos *data)
 {
+    char recepcion[3];
+    bool proveedor_existente;
+
+    data->data_files.file_articulos = fopen(data->data_dir.ruta_file_articulos, "rb");
+    data->data_files.file_control_compras = fopen(data->data_dir.ruta_file_control_compras, "rb");
+
+    if (data->data_files.file_articulos == NULL || data->data_files.file_control_compras == NULL)
+    {
+        fprintf(stderr, "ERROR: NO SE PUDO ABRIR CORRECTAMENTE EL ARCHIVO DE CONTROL DE INVENTARIOS");
+    }
+    else
+    {
+        do
+        {
+            limpiar_terminal();
+
+            printf("Existen recepciones? Si/No: ");
+            limpiar_buffer_STDIN();
+            fgets(recepcion, sizeof(recepcion), stdin);
+
+            recepcion[strcspn(recepcion, "\n")] = '\0';
+
+            convertir_cadena_a_minuscula(recepcion);
+
+            if (strcmp(recepcion, "si") != 0 && strcmp(recepcion, "no") != 0)
+
+                validar_errores_por_SO();
+
+        } while (strcmp(recepcion, "si") != 0 && strcmp(recepcion, "no") != 0);
+
+        while (strcmp(recepcion, "si") == 0)
+        {
+            
+        }
+        
+    }
+}
+
+extern bool verificar_articulo_punto_reorden(FILE *file, struct Datos_Articulos *data_articles, const char *dir, const int *numero_articulo)
+{
+    file = fopen(dir, "rb");
+
+    if (file == NULL)
+    {
+        fprintf(stderr, "NO SE PUDIERON OBTENER LOS DATOS. . .");
+        exit(EXIT_FAILURE);
+    }
+
+    fseek(file, (*numero_articulo) * sizeof(*data_articles), SEEK_SET);
+    fread(data_articles, sizeof(*data_articles), 1, file);
+
+    if (data_articles->inventario == data_articles->punto_reorden)
+
+        return true;
+
+    return false;
 
 }
 
@@ -2068,15 +2191,14 @@ extern void refrescar_contadores(struct Conjunto_Datos *data)
     fclose(data->data_files.file_proveedor);
 }
 
-extern void buscar_precios(struct Conjunto_Datos *data, float *precio_articulo)
+extern void buscar_precios(struct Conjunto_Datos *data, float *precio_articulo, const int *t_o_f)
 {
     data->data_files.file_articulos = fopen(data->data_dir.ruta_file_articulos, "rb");
 
     if (data->data_files.file_articulos == NULL)
-    {
-        fprintf(stderr, "NO SE PUDO LEER CORRECTAMENTE EL FICHERO. . .");
-        exit(EXIT_FAILURE);
-    }
+
+        liberar_memoria_salida_de_error(&data->data_dir);
+
 
     fseek(data->data_files.file_articulos, data->data_ventas.numero_articulo * sizeof(data->data_articulos), SEEK_SET);
     fread(&data->data_articulos, sizeof(data->data_articulos), 1, data->data_files.file_articulos);
@@ -2108,30 +2230,95 @@ extern bool buscar_cantidades(struct Conjunto_Datos *all_data, const int *numero
     return true;
 }
 
-extern void calcular_precios_por_cliente(struct Conjunto_Datos *all_data)
+extern void calcular_precios(struct Conjunto_Datos *all_data, const int *t_o_f, const int *proveedor)
 {
-    all_data->data_files.file_clientes = fopen(all_data->data_dir.ruta_file_clientes, "rb");
+    if (*t_o_f == 1)
+    {
+        all_data->data_files.file_clientes = fopen(all_data->data_dir.ruta_file_clientes, "rb");
+
+        if (all_data->data_files.file_clientes == NULL)
+        {
+            fprintf(stderr, "ERROR AL OBTENER LOS DATOS NECESARIOS. . .");
+            exit(EXIT_FAILURE);
+        }
+
+        fseek(all_data->data_files.file_clientes, all_data->data_ventas.numero_cliente * sizeof(all_data->data_clientes), SEEK_SET);
+        fread(&all_data->data_clientes, sizeof(all_data->data_clientes), 1, all_data->data_files.file_clientes);
+    }
+    else
+    {
+        all_data->data_files.file_proveedor = fopen(all_data->data_dir.ruta_file_proveedores, "rb");
+
+        if (all_data->data_files.file_proveedor == NULL)
+        {
+            fprintf(stderr, "ERROR AL OBTENER LOS DATOS NECESARIOS. . .");
+            exit(EXIT_FAILURE);
+        }
+
+        fseek(all_data->data_files.file_proveedor, all_data->data_compras.numero_proveedor * sizeof(all_data->data_proveedores), SEEK_SET);
+        fread(&all_data->data_proveedores, sizeof(all_data->data_proveedores), 1, all_data->data_files.file_proveedor);
+    }
 
     all_data->data_files.file_articulos = fopen(all_data->data_dir.ruta_file_articulos, "rb");
 
-    if (all_data->data_files.file_clientes == NULL || all_data->data_files.file_articulos == NULL)
+    if (all_data->data_files.file_articulos == NULL)
     {
         fprintf(stderr, "ERROR AL OBTENER LOS DATOS NECESARIOS. . .");
         exit(EXIT_FAILURE);
     }
 
-    fseek(all_data->data_files.file_clientes, all_data->data_ventas.numero_cliente * sizeof(all_data->data_clientes), SEEK_SET);
-    fread(&all_data->data_clientes, sizeof(all_data->data_clientes), 1, all_data->data_files.file_clientes);
 
     fseek(all_data->data_files.file_articulos, all_data->data_ventas.numero_articulo * sizeof(all_data->data_articulos), SEEK_SET);
     fread(&all_data->data_articulos, sizeof(all_data->data_articulos), 1, all_data->data_files.file_articulos);
 
-    all_data->data_ventas.precio = (all_data->data_ventas.cantidad * all_data->data_articulos.precio_venta);
-    all_data->data_ventas.precio -= (all_data->data_ventas.precio * all_data->data_clientes.descuento_cliente);
+    if (*t_o_f == 1)
+    {
+        all_data->data_ventas.precio = (all_data->data_ventas.cantidad * all_data->data_articulos.precio_venta);
+        all_data->data_ventas.precio -= (all_data->data_ventas.precio * all_data->data_clientes.descuento_cliente);
 
-    fclose(all_data->data_files.file_clientes);
+        fclose(all_data->data_files.file_clientes);
+    }
+    else
+    {
+        all_data->data_compras.precio = (all_data->data_compras.cantidad * (*(all_data->data_articulos.precio_compra + (*proveedor))));
+        all_data->data_compras.precio -= (all_data->data_compras.precio * all_data->data_proveedores.descuento);
+
+        fclose(all_data->data_files.file_proveedor);
+    }
+
     fclose(all_data->data_files.file_articulos);
 
+}
+
+extern bool buscar_proveedor_articulo(struct Conjunto_Datos *all_data, int *proveedor_encontrado)
+{
+    int i;
+
+    all_data->data_files.file_articulos = fopen(all_data->data_dir.ruta_file_articulos, "rb");
+
+    if (all_data->data_files.file_articulos == NULL)
+    {
+        fprintf(stderr, "NO SE PUDIERON OBTENER LOS DATOS NECESARIOS");
+        exit(EXIT_FAILURE);
+    }
+
+    fseek(all_data->data_files.file_articulos, all_data->data_compras.numero_articulo * sizeof(all_data->data_articulos), SEEK_SET);
+
+    fread(&all_data->data_articulos, sizeof(all_data->data_articulos), 1, all_data->data_files.file_articulos);
+
+    fclose(all_data->data_files.file_articulos);
+
+    for ( i = 0; i < all_data->data_contador.proveedores_neto; i++)
+    {
+        if (*(all_data->data_articulos.numero_proveedor + i) == all_data->data_compras.numero_proveedor)
+        {
+            *proveedor_encontrado = i;
+            return true;
+        }
+    }
+
+
+    return false;
 }
 
 extern bool es_bisiesto(const int *year)
@@ -2337,6 +2524,20 @@ extern bool validar_cadenas(const char *caracter)
     }
 
     return true;
+}
+
+extern void liberar_memoria_salida_de_error(struct Directorios *dir)
+{
+    fprintf(stderr, "NO SE PUDO OBTENER CORRECTAMENTE EL/LOS FICHERO/S. . .");
+
+    free(dir->ruta_file_articulos);
+    free(dir->ruta_file_clientes);
+    free(dir->ruta_file_control_compras);
+    free(dir->ruta_file_control_ventas);
+    free(dir->ruta_file_empleados);
+    free(dir->ruta_file_proveedores);
+
+    exit(EXIT_FAILURE);
 }
 
 // Limpia buffer STDIN tanto para sistemas Windows como para UNIX/Linux
