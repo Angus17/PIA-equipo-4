@@ -40,7 +40,7 @@ struct Datos_Empleados
 
 struct Datos_Control_Ventas
 {
-    int numero_cliente, numero_articulo;
+    int numero_cliente, numero_articulo, mes, dia;
     float precio;
     int cantidad, numero_empleado;
     float comision_empleado;
@@ -110,11 +110,13 @@ extern void controlar_compras( struct Conjunto_Datos * );
 extern void controlar_inventario( struct Conjunto_Datos * );
 extern void manejar_reportes();
 extern void refrescar_contadores( struct Conjunto_Datos * );
-extern void buscar_precios( struct Conjunto_Datos *, float *, const int * );
+extern void buscar_precios( struct Conjunto_Datos *, float *, const int * , const int *);
 extern void calcular_precios( struct Conjunto_Datos *, const int *, const int * );
+extern void realizar_cambios_inventario(struct Conjunto_Datos *);
 
 // VALIDACIONES
 
+extern bool buscar_existencia_articulos_proveedor(FILE *, const char *, struct Datos_Control_Compras * );
 extern bool buscar_cantidades(struct Conjunto_Datos *, const int *, const int *);
 extern bool buscar_proveedor_articulo(struct Conjunto_Datos *, int *);
 extern bool es_bisiesto( const int * );
@@ -122,8 +124,7 @@ extern bool mes_30_dias( const int * );
 extern bool dia_valido( const int *, const int *, const int *, const int * );
 extern void convertir_cadena_a_minuscula( char * );
 extern bool verificar_articulo_punto_reorden(FILE *, struct Datos_Articulos *, const char *, const int *);
-extern bool verificar_existencia_claves( FILE *, int *, const int * );
-extern bool verificar_existencia_proveedor( FILE *, struct Datos_Proveedores *, const int *, const char * );
+extern bool verificar_existencia_claves( FILE *, const char *, int *, const int * );
 extern bool buscar_proveedores( const int *, const int * );
 extern bool validar_cadenas(const char * );
 extern void liberar_memoria_salida_de_error(struct Directorios *);
@@ -302,79 +303,78 @@ int main(void)
 
             case 2:
                 if (datos_struct.data_contador.articulos_neto > 0 && datos_struct.data_contador.empleados_neto > 0)
-                {
-                    capturar_clientes(&datos_struct);
-                }
-                else
-                {
 
-                }
+                    capturar_clientes(&datos_struct);
+
+                else
+
+                    puts("Verifica tanto la existencia de articulos como de emplead@s");
 
                 break;
 
             case 3:
                 if (datos_struct.data_contador.empleados_neto < 20)
-                {
+
                     capturar_empleados(&datos_struct);
-                }
+
                 else
-                {
-                    /* code */
-                }
+
+                    puts("No puedes registrar más emplead@s, límite alcanzado. . .");
+
                 break;
 
             case 4:
                 if (datos_struct.data_contador.proveedores_neto < 10)
-                {
+
                     capturar_proveedores(&datos_struct);
-                }
+
                 else
-                {
-                    /* code */
-                }
+
+                    puts("No puedes registrar más proveedores, límite alcanzado. . .");
+
                 break;
 
             case 5:
                 if (datos_struct.data_contador.clientes_neto > 0)
-                {
-                    /* code */
-                }
+
+                    controlar_ventas(&datos_struct);
+
                 else
-                {
-                    puts("La mueblería no está lista para vender aún. . .");
-                }
+
+                    puts("La mueblería no está lista para vender aún, faltan registros de clientes. . .");
+
                 break;
 
             case 6:
                 if (datos_struct.data_contador.proveedores_neto > 0)
-                {
-                    /* code */
-                }
+
+                    controlar_compras(&datos_struct);
+
                 else
-                {
-                    puts("No existen proveedores para surtir artículos. . .");
-                }
+
+                    puts("No existen proveedores para surtir más artículos. . .");
+
                 break;
 
             case 7:
-                if (false)
-                {
-                    /* code */
-                } /* code */
+                if (buscar_existencia_articulos_proveedor(datos_struct.data_files.file_control_compras, datos_struct.data_dir.ruta_file_control_compras, &datos_struct.data_compras))
+
+                    controlar_inventario(&datos_struct);
+
                 else
-                {
-                    /* code */
-                }
+
+                    puts("Todos los articulos fueron recibidos. . .");
+
                 break;
 
             case 8:
                 if (false)
                 {
-                    /* code */
+                    
                 }
                 else
                 {
-                    /* code */
+                    
                 }
                 break;
 
@@ -383,6 +383,9 @@ int main(void)
                 free(datos_struct.data_dir.ruta_file_clientes);
                 free(datos_struct.data_dir.ruta_file_empleados);
                 free(datos_struct.data_dir.ruta_file_proveedores);
+                free(datos_struct.data_dir.ruta_file_control_compras);
+                free(datos_struct.data_dir.ruta_file_control_ventas);
+
                 break;
             }
 
@@ -569,7 +572,7 @@ extern void capturar_articulos(struct Conjunto_Datos *data)
     bool descripcion_correcta, provedor_articulo, clave_existente = false;
     bool proveedor_existente, proveedor_ya_ingresado;
     int i;
-    const int type_of_file = 1;
+    const int type_of_file = 1, file_proveedores = 3;
 
     data->data_files.file_articulos = fopen(data->data_dir.ruta_file_articulos, "rb+");
 
@@ -615,7 +618,7 @@ extern void capturar_articulos(struct Conjunto_Datos *data)
 
                 else if (data->data_contador.articulos_neto > 0)
                     {
-                        clave_existente = verificar_existencia_claves(data->data_files.file_articulos, &data->data_articulos.numero_articulo, &type_of_file);
+                        clave_existente = verificar_existencia_claves(data->data_files.file_articulos, data->data_dir.ruta_file_articulos, &data->data_articulos.numero_articulo, &type_of_file);
 
                         if (clave_existente)
                         {
@@ -685,11 +688,11 @@ extern void capturar_articulos(struct Conjunto_Datos *data)
                     limpiar_buffer_STDIN();
                 } while (scanf("%lf", &data->data_articulos.precio_venta) != 1);
 
-                if (data->data_articulos.inventario < 1)
+                if (data->data_articulos.precio_venta < 1)
 
                     validar_errores_por_SO();
 
-            } while (data->data_articulos.inventario < 1);
+            } while (data->data_articulos.precio_venta < 1);
 
             provedor_articulo = true;
             i = 0;
@@ -713,7 +716,7 @@ extern void capturar_articulos(struct Conjunto_Datos *data)
 
                     else
                     {
-                        proveedor_existente = verificar_existencia_proveedor(data->data_files.file_proveedor, &data->data_proveedores, &data->data_articulos.numero_proveedor[i], data->data_dir.ruta_file_proveedores);
+                        proveedor_existente = verificar_existencia_claves(data->data_files.file_proveedor, data->data_dir.ruta_file_proveedores, &data->data_articulos.numero_proveedor[i], &file_proveedores);
 
                         if (!proveedor_existente)
                         {
@@ -821,7 +824,7 @@ extern void capturar_clientes(struct Conjunto_Datos *data)
 {
     char existencia_cliente[3], expresion[] = "^[A-Za-z0-9._-]+@[a-z]+\\.[a-z]{2,}$";
     char expresion_3[] = "^([A-Z]{4})([0-9]{6})([A-Z0-9]{3})$";
-    char expresion_2[] = "^Calle #([0-9]+) Colonia ([A-Za-z ]+), Municipio ([A-Za-z ]+), Estado ([A-Za-z ]+)\\.$";
+    char expresion_2[] = "^([0-9A-Za-z ]+) #([0-9]+) ([A-Za-z ]+)\\, ([A-Za-z ]+)\\, ([A-Za-z ]+)$";
     regex_t regular, regular_2, regular_3;
     bool descripcion_correcta, clave_existente = false;
     int regex = regcomp(&regular, expresion, REG_EXTENDED);
@@ -874,7 +877,7 @@ extern void capturar_clientes(struct Conjunto_Datos *data)
 
                     else if (data->data_contador.clientes_neto > 0)
                         {
-                            clave_existente = verificar_existencia_claves(data->data_files.file_clientes, &data->data_clientes.numero_cliente, &type_of_file);
+                            clave_existente = verificar_existencia_claves(data->data_files.file_clientes, data->data_dir.ruta_file_clientes, &data->data_clientes.numero_cliente, &type_of_file);
 
                             if (clave_existente)
                             {
@@ -1010,8 +1013,8 @@ extern void capturar_clientes(struct Conjunto_Datos *data)
                     limpiar_terminal();
 
                     printf("Por último, ingresa su dirección usando el siguiente formato\n"
-                            "NOTA!: Cambia los campos con * con tus datos, e ignorando todos los parentesis\n"
-                            "(Calle #(*tu_numero) Colonia (*tu_colonia), Municipio (*tu_municipio), Estado (*tu_estado).)");
+                            "NOTA!: Cambia los campos entre () ignorando todos los parentesis\n"
+                            "(Calle) #(numero) (Colonia,Fracc...etc.), (Municipio), (Estado):\n\n");
                     limpiar_buffer_STDIN();
                     fgets(data->data_clientes.datos.direccion, sizeof(data->data_clientes.datos.direccion), stdin);
 
@@ -1061,7 +1064,7 @@ extern void capturar_empleados(struct Conjunto_Datos *data)
 {
     char existencia_empleado[3], expresion[] = "^[A-Za-z0-9._-]+@[a-z]+\\.[a-z]{2,}$";
     char expresion_3[] = "^([A-Z]{4})([0-9]{6})([A-Z0-9]{3})$";
-    char expresion_2[] = "^Calle #([0-9]+) Colonia ([A-Za-z ]+), Municipio ([A-Za-z ]+), Estado ([A-Za-z ]+)\\.$";
+    char expresion_2[] = "^([0-9A-Za-z ]+) #([0-9]+) ([A-Za-z ]+)\\, ([A-Za-z ]+)\\, ([A-Za-z ]+)$";
     regex_t regular, regular_2, regular_3;
     bool descripcion_correcta, clave_existente;
     int regex = regcomp(&regular, expresion, REG_EXTENDED), anio, mes;
@@ -1120,7 +1123,7 @@ extern void capturar_empleados(struct Conjunto_Datos *data)
 
                     else if (data->data_contador.empleados_neto > 0)
                         {
-                            clave_existente = verificar_existencia_claves(data->data_files.file_empleados, &data->data_empleados.numero_empleado, &type_of_file);
+                            clave_existente = verificar_existencia_claves(data->data_files.file_empleados, data->data_dir.ruta_file_empleados, &data->data_empleados.numero_empleado, &type_of_file);
 
                             if (clave_existente)
                             {
@@ -1237,8 +1240,8 @@ extern void capturar_empleados(struct Conjunto_Datos *data)
                     limpiar_terminal();
 
                     printf("Por último, ingresa su dirección usando el siguiente formato\n"
-                            "NOTA!: Cambia los campos con * con tus datos, e ignorando todos los parentesis\n"
-                            "(Calle #(*tu_numero) Colonia (*tu_colonia), Municipio (*tu_municipio), Estado (*tu_estado).)");
+                            "NOTA!: Cambia los campos entre () ignorando todos los parentesis\n"
+                            "(Calle) #(numero) (Colonia,Fracc...etc.), (Municipio), (Estado):\n\n");
                     limpiar_buffer_STDIN();
                     fgets(data->data_empleados.datos.direccion, sizeof(data->data_empleados.datos.direccion), stdin);
 
@@ -1348,7 +1351,7 @@ extern void capturar_proveedores(struct Conjunto_Datos *data)
                         validar_errores_por_SO();
                     else if (data->data_contador.proveedores_neto > 0)
                         {
-                            clave_existente = verificar_existencia_claves(data->data_files.file_proveedor, &data->data_proveedores.numero_proveedor, &type_of_file);
+                            clave_existente = verificar_existencia_claves(data->data_files.file_proveedor, data->data_dir.ruta_file_proveedores, &data->data_proveedores.numero_proveedor, &type_of_file);
 
                             if (clave_existente)
                             {
@@ -1542,6 +1545,12 @@ extern void controlar_ventas(struct Conjunto_Datos *data)
     bool cliente_actual = true, clave_existente = false, cantidad_existente = false, empleado_actual = true;
     const int file_articulos = 1, file_clientes = 2, file_empleados = 4, file_ventas = 1;
     float precio = 0.0;
+    int mes_actual;
+
+    time_t tiempo = time(NULL);
+    struct tm *time = localtime(&tiempo);
+
+    mes_actual = time->tm_mon + 1;
 
     data->data_files.file_control_ventas = fopen(data->data_dir.ruta_file_control_ventas, "rb+");
 
@@ -1591,7 +1600,7 @@ extern void controlar_ventas(struct Conjunto_Datos *data)
 
                     else
                     {
-                        clave_existente = verificar_existencia_claves(data->data_files.file_clientes, &data->data_ventas.numero_cliente, &file_clientes);
+                        clave_existente = verificar_existencia_claves(data->data_files.file_clientes, data->data_dir.ruta_file_clientes, &data->data_ventas.numero_cliente, &file_clientes);
 
                         if (!clave_existente)
                         {
@@ -1622,7 +1631,7 @@ extern void controlar_ventas(struct Conjunto_Datos *data)
 
                 else if (data->data_contador.articulos_neto > 0)
                     {
-                        clave_existente = verificar_existencia_claves(data->data_files.file_articulos, &data->data_ventas.numero_articulo, &file_articulos);
+                        clave_existente = verificar_existencia_claves(data->data_files.file_articulos, data->data_dir.ruta_file_articulos, &data->data_ventas.numero_articulo, &file_articulos);
 
                         if (!clave_existente)
                         {
@@ -1662,7 +1671,40 @@ extern void controlar_ventas(struct Conjunto_Datos *data)
 
             } while (data->data_ventas.cantidad < 1 || !cantidad_existente);
 
-            buscar_precios(data, &precio, &file_ventas);
+            do
+            {
+                do
+                {
+                    limpiar_terminal();
+
+                    printf("Mes de venta (1-%d): ", mes_actual);
+                    limpiar_buffer_STDIN();
+                } while (scanf("%d", &data->data_ventas.mes) != 1);
+
+                if (data->data_ventas.mes < 1 || data->data_ventas.mes > mes_actual)
+
+                    validar_errores_por_SO();
+
+
+            } while (data->data_ventas.mes < 1 || data->data_ventas.mes > mes_actual);
+
+            do
+            {
+                do
+                {
+                    limpiar_terminal();
+
+                    printf("Dia de venta: ");
+                    limpiar_buffer_STDIN();
+                } while (scanf("%d", &data->data_ventas.dia) != 1);
+
+                if (!dia_valido(&data->data_ventas.dia, &data->data_ventas.mes, NULL, &file_ventas))
+
+                    validar_errores_por_SO();
+
+            } while (!dia_valido(&data->data_ventas.dia, &data->data_ventas.mes, NULL, &file_ventas));
+
+            buscar_precios(data, &precio, &file_ventas, NULL);
 
             printf("Precio neto: $%.2f\n\n", precio);
             pausar_terminal();
@@ -1685,7 +1727,7 @@ extern void controlar_ventas(struct Conjunto_Datos *data)
 
                     else if (data->data_contador.empleados_neto > 0)
                         {
-                            clave_existente = verificar_existencia_claves(data->data_files.file_empleados, &data->data_ventas.numero_empleado, &file_empleados);
+                            clave_existente = verificar_existencia_claves(data->data_files.file_empleados, data->data_dir.ruta_file_empleados, &data->data_ventas.numero_empleado, &file_empleados);
 
                             if (!clave_existente)
                             {
@@ -1906,7 +1948,7 @@ extern void controlar_compras(struct Conjunto_Datos *data)
 
                     else
                     {
-                        clave_existente = verificar_existencia_claves(data->data_files.file_proveedor, &data->data_compras.numero_proveedor, &file_proveedores);
+                        clave_existente = verificar_existencia_claves(data->data_files.file_proveedor, data->data_dir.ruta_file_proveedores, &data->data_compras.numero_proveedor, &file_proveedores);
 
                         if (!clave_existente)
                         {
@@ -1937,7 +1979,7 @@ extern void controlar_compras(struct Conjunto_Datos *data)
 
                 else if (data->data_contador.articulos_neto > 0)
                     {
-                        clave_existente = verificar_existencia_claves(data->data_files.file_articulos, &data->data_compras.numero_articulo, &file_articulos);
+                        clave_existente = verificar_existencia_claves(data->data_files.file_articulos, data->data_dir.ruta_file_articulos, &data->data_compras.numero_articulo, &file_articulos);
 
                         if (!clave_existente)
                         {
@@ -1987,7 +2029,8 @@ extern void controlar_compras(struct Conjunto_Datos *data)
 
             } while (data->data_compras.cantidad < 1);
 
-            buscar_precios(data, &precio, &file_compras);
+            calcular_precios(data, &file_compras, &numero_proveedor);
+            buscar_precios(data, &precio, &file_compras, &numero_proveedor);
             printf("Precio neto: $%.2f\n\n", precio);
             pausar_terminal();
 
@@ -2013,7 +2056,6 @@ extern void controlar_compras(struct Conjunto_Datos *data)
             {
                 proveedor_actual = true;
 
-                calcular_precios(data, &file_compras, &numero_proveedor);
 
                 limpiar_terminal();
 
@@ -2035,19 +2077,6 @@ extern void controlar_compras(struct Conjunto_Datos *data)
                 data->data_compras.saldo_pagar = data->data_compras.precio;
 
                 fwrite(&data->data_compras, sizeof(data->data_compras), 1, data->data_files.file_control_compras);
-
-                data->data_files.file_articulos = fopen(data->data_dir.ruta_file_articulos, "rb+");
-
-                if (data->data_files.file_articulos == NULL)
-
-                    liberar_memoria_salida_de_error(&data->data_dir);
-
-                fseek(data->data_files.file_articulos, data->data_compras.numero_articulo * sizeof(data->data_articulos), SEEK_SET);
-                fread(&data->data_articulos, sizeof(data->data_articulos), 1, data->data_files.file_articulos);
-
-                data->data_articulos.inventario += data->data_compras.cantidad;
-
-                fclose(data->data_files.file_articulos);
 
                 do
                 {
@@ -2078,15 +2107,18 @@ extern void controlar_compras(struct Conjunto_Datos *data)
 extern void controlar_inventario(struct Conjunto_Datos *data)
 {
     char recepcion[3];
-    bool proveedor_existente;
+    bool clave_existente, proveedor_pendiente_entrega, id_existente;
+    const int file_proveedores = 3, file_inventario = 5;
+    int auxiliar_id = 1;
+    float saldo_pagar = 0.0;
 
     data->data_files.file_articulos = fopen(data->data_dir.ruta_file_articulos, "rb");
     data->data_files.file_control_compras = fopen(data->data_dir.ruta_file_control_compras, "rb");
 
     if (data->data_files.file_articulos == NULL || data->data_files.file_control_compras == NULL)
-    {
+
         fprintf(stderr, "ERROR: NO SE PUDO ABRIR CORRECTAMENTE EL ARCHIVO DE CONTROL DE INVENTARIOS");
-    }
+
     else
     {
         do
@@ -2107,11 +2139,150 @@ extern void controlar_inventario(struct Conjunto_Datos *data)
 
         } while (strcmp(recepcion, "si") != 0 && strcmp(recepcion, "no") != 0);
 
-        while (strcmp(recepcion, "si") == 0)
+        while (strcmp(recepcion, "si") == 0 && buscar_existencia_articulos_proveedor(data->data_files.file_control_compras, data->data_dir.ruta_file_control_compras, &data->data_compras))
         {
-            
+            do
+            {
+                do
+                {
+                    limpiar_terminal();
+
+                    printf("Número de proveedor: ");
+                    limpiar_buffer_STDIN();
+                } while (scanf("%d", &data->data_inventario.numero_proveedor) != 1);
+
+                if (data->data_inventario.numero_proveedor < 1 || data->data_inventario.numero_proveedor > 10)
+
+                    validar_errores_por_SO();
+
+                else
+                {
+                    clave_existente = verificar_existencia_claves(data->data_files.file_proveedor, data->data_dir.ruta_file_proveedores,&data->data_inventario.numero_proveedor, &file_proveedores);
+
+                    if (!clave_existente)
+                    {
+                        limpiar_terminal();
+                        puts("El proveedor ingresado no existe en el sistema. . .");
+                        pausar_terminal();
+                    }
+                }
+
+            } while (data->data_compras.numero_proveedor < 1 || data->data_compras.numero_proveedor > 10 || !clave_existente);
+
+            proveedor_pendiente_entrega = buscar_existencia_articulos_proveedor(data->data_files.file_control_compras, data->data_dir.ruta_file_control_compras, &data->data_compras);
+
+            if (!proveedor_pendiente_entrega)
+            {
+                limpiar_terminal();
+                puts("EL PROVEEDOR YA HA REALIZADO TODAS LAS ENTREGAS PENDIENTES");
+            }
+            else
+            {
+                rewind(data->data_files.file_control_compras);
+
+                printf("%-30s %-30s %-50s %s\n\n", "ID COMPRA", "ARTÍCULO", "DESCRIPCIÓN", "CANTIDAD");
+
+                while (fread(&data->data_compras, sizeof(data->data_compras), 1, data->data_files.file_control_compras))
+                {
+                    if (data->data_compras.id_compra != 0)
+                    {
+
+                        fseek(data->data_files.file_articulos, data->data_compras.numero_articulo * sizeof(data->data_articulos), SEEK_SET);
+                        fread(&data->data_articulos, sizeof(data->data_articulos), 1, data->data_files.file_articulos);
+
+                        printf("%-30d %-30d %-50s %d\n", data->data_compras.id_compra, data->data_compras.numero_articulo, data->data_articulos.descripcion_articulo, data->data_compras.cantidad);
+
+                        if (data->data_compras.id_compra == auxiliar_id + 1)
+
+                            printf("%.2f\n\n", saldo_pagar);
+
+                        auxiliar_id = data->data_compras.id_compra;
+                        saldo_pagar = data->data_compras.saldo_pagar;
+                    }
+                }
+
+                do
+                {
+                    do
+                    {
+                        limpiar_terminal();
+
+                        printf("Número de compra: ");
+                        limpiar_buffer_STDIN();
+                    } while (scanf("%d", &data->data_inventario.numero_compra) != 1);
+
+                    if (data->data_inventario.numero_compra < 1)
+
+                        validar_errores_por_SO();
+
+                    else
+                    {
+                        id_existente = verificar_existencia_claves(data->data_files.file_control_compras, data->data_dir.ruta_file_control_compras, &data->data_inventario.numero_compra, &file_inventario);
+
+                        if (!id_existente)
+                        {
+                            limpiar_terminal();
+                            puts("El ID ingresado no existe en el sistema. . .");
+                            pausar_terminal();
+                        }
+                    }
+                } while (data->data_inventario.numero_compra < 1 || !id_existente);
+
+                do
+                {
+                    limpiar_terminal();
+
+                    printf("La orden fué recibida? Si/No: ");
+                    limpiar_buffer_STDIN();
+                    fgets(data->data_inventario.recibido, sizeof(data->data_inventario.recibido), stdin);
+
+                    data->data_inventario.recibido[strcspn(data->data_inventario.recibido, "\n")] = '\0';
+
+                    convertir_cadena_a_minuscula(data->data_inventario.recibido);
+
+                    if (strcmp(data->data_inventario.recibido, "si") != 0 && strcmp(data->data_inventario.recibido, "no") != 0)
+
+                        validar_errores_por_SO();
+
+                } while (strcmp(data->data_inventario.recibido, "si") != 0 && strcmp(data->data_inventario.recibido, "no") != 0);
+
+                if (strcmp(data->data_inventario.recibido, "si") == 0)
+                {
+                    realizar_cambios_inventario(data);
+
+                    limpiar_terminal();
+                    puts("SE HA CONFIRMADO CORRECTAMENTE LA RECEPCIÓN EN EL INVENTARIO!");
+                    pausar_terminal();
+                }
+
+                if (buscar_existencia_articulos_proveedor(data->data_files.file_control_compras, data->data_dir.ruta_file_control_compras, &data->data_compras))
+                {
+                    do
+                    {
+                        limpiar_terminal();
+
+                        printf("Existen más recepciones? Si/No: ");
+                        limpiar_buffer_STDIN();
+                        fgets(recepcion, sizeof(recepcion), stdin);
+
+                        recepcion[strcspn(recepcion, "\n")] = '\0';
+
+                        convertir_cadena_a_minuscula(recepcion);
+
+                        if (strcmp(recepcion, "si") != 0 && strcmp(recepcion, "no") != 0)
+
+                            validar_errores_por_SO();
+
+                    } while (strcmp(recepcion, "si") != 0 && strcmp(recepcion, "no") != 0);
+                }
+                else
+                {
+                    limpiar_terminal();
+                    puts("TODOS LOS PEDIDOS HAN SIDO CONFIRMADOS DE ENTREGA!");
+                    pausar_terminal();
+                }
+            }
         }
-        
     }
 }
 
@@ -2128,7 +2299,7 @@ extern bool verificar_articulo_punto_reorden(FILE *file, struct Datos_Articulos 
     fseek(file, (*numero_articulo) * sizeof(*data_articles), SEEK_SET);
     fread(data_articles, sizeof(*data_articles), 1, file);
 
-    if (data_articles->inventario == data_articles->punto_reorden)
+    if (data_articles->inventario <= data_articles->punto_reorden)
 
         return true;
 
@@ -2191,7 +2362,7 @@ extern void refrescar_contadores(struct Conjunto_Datos *data)
     fclose(data->data_files.file_proveedor);
 }
 
-extern void buscar_precios(struct Conjunto_Datos *data, float *precio_articulo, const int *t_o_f)
+extern void buscar_precios(struct Conjunto_Datos *data, float *precio_articulo, const int *t_o_f, const int *proveedor)
 {
     data->data_files.file_articulos = fopen(data->data_dir.ruta_file_articulos, "rb");
 
@@ -2199,13 +2370,47 @@ extern void buscar_precios(struct Conjunto_Datos *data, float *precio_articulo, 
 
         liberar_memoria_salida_de_error(&data->data_dir);
 
+    if (*t_o_f == 1)
+    {
+        fseek(data->data_files.file_articulos, data->data_ventas.numero_articulo * sizeof(data->data_articulos), SEEK_SET);
+        fread(&data->data_articulos, sizeof(data->data_articulos), 1, data->data_files.file_articulos);
 
-    fseek(data->data_files.file_articulos, data->data_ventas.numero_articulo * sizeof(data->data_articulos), SEEK_SET);
-    fread(&data->data_articulos, sizeof(data->data_articulos), 1, data->data_files.file_articulos);
+        (*precio_articulo) = data->data_articulos.precio_venta;
+    }
+    else
+    {
+        fseek(data->data_files.file_articulos, data->data_compras.numero_articulo * sizeof(data->data_articulos), SEEK_SET);
+        fread(&data->data_articulos, sizeof(data->data_articulos), 1, data->data_files.file_articulos);
 
-    (*precio_articulo) = data->data_articulos.precio_venta;
+        (*precio_articulo) = *(data->data_articulos.precio_compra + (*proveedor));
+    }
+    
 
     fclose(data->data_files.file_articulos);
+}
+
+extern bool buscar_existencia_articulos_proveedor(FILE *file_compras, const char *dir, struct Datos_Control_Compras *data_compras)
+{
+    file_compras = fopen(dir, "rb");
+
+    if (file_compras == NULL)
+
+        return false;
+
+    rewind(file_compras);
+
+    while (fread(data_compras, sizeof(*data_compras), 1, file_compras))
+    {
+        if (data_compras->id_compra != 0)
+        {
+            fclose(file_compras);
+            return true;
+        }
+    }
+
+
+    fclose(file_compras);
+    return false;
 }
 
 extern bool buscar_cantidades(struct Conjunto_Datos *all_data, const int *numero_articulo, const int *cantidad_ingresada)
@@ -2290,6 +2495,28 @@ extern void calcular_precios(struct Conjunto_Datos *all_data, const int *t_o_f, 
 
 }
 
+extern void realizar_cambios_inventario(struct Conjunto_Datos *all_data)
+{
+    rewind(all_data->data_files.file_control_compras);
+
+    while (fread(&all_data->data_compras, sizeof(all_data->data_compras), 1, all_data->data_files.file_control_compras))
+    {
+        if (all_data->data_inventario.numero_compra == all_data->data_compras.id_compra)
+        {
+            fseek(all_data->data_files.file_articulos, (all_data->data_compras.numero_articulo) * sizeof(all_data->data_articulos), SEEK_SET);
+            fread(&all_data->data_articulos, sizeof(all_data->data_articulos), 1, all_data->data_files.file_articulos);
+
+            all_data->data_articulos.inventario += all_data->data_compras.cantidad; // Agrega a inventario
+            all_data->data_compras.id_compra = 0; // Entregada
+            all_data->data_compras.saldo_pagar = 0.0; // Pagado
+        }
+        else if (all_data->data_inventario.numero_compra < all_data->data_compras.id_compra)
+
+                return;
+
+    }
+}
+
 extern bool buscar_proveedor_articulo(struct Conjunto_Datos *all_data, int *proveedor_encontrado)
 {
     int i;
@@ -2352,18 +2579,6 @@ extern bool mes_30_dias(const int *month)
 
 extern bool dia_valido(const int *day, const int *month, const int *year, const int *t_o_f)
 {
-    /* if (    ((data->data_clientes.datos.mes == 2 && !es_bisiesto(&data->data_clientes.datos.anio))
-        &&  (data->data_clientes.datos.dia < 1 || data->data_clientes.datos.dia > 28)) ||
-            ((data->data_clientes.datos.mes == 2 && es_bisiesto(&data->data_clientes.datos.anio))
-        &&  (data->data_clientes.datos.dia < 1 || data->data_clientes.datos.dia > 29)) ||
-            (mes_30_dias(&data->data_clientes.datos.mes)
-        &&  data->data_clientes.datos.dia < 1 || data->data_clientes.datos.dia > 30) ||
-            (!mes_30_dias(&data->data_clientes.datos.mes)
-        &&  data->data_clientes.datos.dia < 1 || data->data_clientes.datos.dia > 31))
-    {
-
-    } */
-
     int current_year, current_month, current_day;
     time_t tiempo = time(NULL);
     struct tm *fecha_actual = localtime(&tiempo);
@@ -2374,6 +2589,17 @@ extern bool dia_valido(const int *day, const int *month, const int *year, const 
 
     switch (*t_o_f)
     {
+        case 1:
+
+            if (    (( (*month) == 2 && !es_bisiesto(&current_year) ) &&  ( (*day) < 1 || (*day) > 28) ) ||
+                    ( ( (*month) == 2 && es_bisiesto(&current_year) ) &&  ( (*day) < 1 || (*day) > 29) ) ||
+                    (mes_30_dias(month) &&  ((*day) < 1 || (*day) > 30)) ||
+                    (!mes_30_dias(month) &&  ((*day) < 1 || (*day) > 31)) ||
+                    ((*month) == current_month && (*day) > current_day))
+
+                return false;
+
+            break;
         case 2:
 
             if (    (( (*month) == 2 && !es_bisiesto(year) ) &&  ( (*day) < 1 || (*day) > 28) ) ||
@@ -2411,12 +2637,24 @@ extern void convertir_cadena_a_minuscula(char *caracter)
     }
 }
 
-extern bool verificar_existencia_claves(FILE *file, int *clave, const int *t_o_f)
+extern bool verificar_existencia_claves(FILE *file, const char *dir, int *clave, const int *t_o_f)
 {
     struct Datos_Articulos articles;
     struct Datos_Clientes customers;
     struct Datos_Empleados employees;
     struct Datos_Proveedores suppliers;
+    struct Datos_Control_Compras buy;
+    struct Directorios pwd;
+
+    if (file == NULL)
+    {
+        file = fopen(dir, "rb");
+
+        if (file == NULL)
+
+            liberar_memoria_salida_de_error(&pwd);
+
+    }
 
     switch (*t_o_f)
     {
@@ -2425,6 +2663,7 @@ extern bool verificar_existencia_claves(FILE *file, int *clave, const int *t_o_f
             fseek(file, (*clave) * sizeof(articles), SEEK_SET);
             fread(&articles, sizeof(articles), 1, file);
 
+            fclose(file);
             if (articles.numero_articulo == (*clave))
 
                 return true;
@@ -2438,9 +2677,10 @@ extern bool verificar_existencia_claves(FILE *file, int *clave, const int *t_o_f
             while (fread(&customers, sizeof(customers), 1, file))
             {
                 if ( (*clave) == customers.numero_cliente )
-
+                {
+                    fclose(file);
                     return true;
-
+                }
             }
 
             break;
@@ -2449,6 +2689,8 @@ extern bool verificar_existencia_claves(FILE *file, int *clave, const int *t_o_f
 
             fseek(file, (*clave) * sizeof(suppliers), SEEK_SET);
             fread(&suppliers, sizeof(suppliers), 1, file);
+
+            fclose(file);
 
             if (suppliers.numero_proveedor == (*clave))
 
@@ -2463,37 +2705,31 @@ extern bool verificar_existencia_claves(FILE *file, int *clave, const int *t_o_f
             while (fread(&employees, sizeof(employees), 1, file))
             {
                 if ( (*clave) == employees.numero_empleado )
-
+                {
+                    fclose(file);
                     return true;
-
+                }
             }
 
             break;
+
+        case 5: // Control de Inventario
+
+            rewind(file);
+
+            while (fread(&buy, sizeof(buy), 1, file))
+            {
+                if ( (*clave) == buy.id_compra )
+                {
+                    fclose(file);
+                    return true;
+                }
+            }
+
+        break;
     }
 
-    return false;
-}
-
-bool verificar_existencia_proveedor(FILE *archivo_proveedores, struct Datos_Proveedores *data, const int *clave, const char *directorio_proveedores)
-{
-    archivo_proveedores = fopen(directorio_proveedores, "rb");
-
-    if (archivo_proveedores == NULL)
-
-        fprintf(stderr, "ERROR! ARCHIVO PROVEEDORES NO ES ACCESIBLE DE MOMENTO. . .");
-
-    else
-    {
-        fseek(archivo_proveedores, (*clave) * sizeof(*data), SEEK_SET);
-        fread(data, sizeof(*data), 1, archivo_proveedores);
-
-        if ((*clave) == data->numero_proveedor)
-
-            return true;
-
-        fclose(archivo_proveedores);
-    }
-
+    fclose(file);
     return false;
 }
 
