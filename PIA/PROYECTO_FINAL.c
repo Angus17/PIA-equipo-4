@@ -12,7 +12,7 @@ struct Datos_Articulos
     int numero_articulo, numero_proveedor[10], punto_reorden;
     char descripcion_articulo[200];
     long int inventario;
-    double precio_compra, precio_venta;
+    double precio_compra[10], precio_venta;
 };
 
 struct Datos_Proveedores
@@ -1133,9 +1133,10 @@ extern void capturar_empleados(struct Conjunto_Datos *data)
                         limpiar_buffer_STDIN();
                     } while (scanf("%d", &data->data_empleados.numero_empleado) != 1);
 
-                    if (data->data_empleados.numero_empleado <= 0 || data->data_empleados.numero_empleado > 20)
+                    if (data->data_empleados.numero_empleado < 1000 || data->data_empleados.numero_empleado > 10000)
 
                         validar_errores_por_SO();
+
                     else if (data->data_contador.empleados_neto > 0)
                         {
                             clave_existente = verificar_existencia_claves(data->data_files.file_empleados, &data->data_empleados.numero_empleado, &type_of_file);
@@ -1148,7 +1149,7 @@ extern void capturar_empleados(struct Conjunto_Datos *data)
                             }
                         }
 
-                } while (data->data_empleados.numero_empleado <= 0 || data->data_empleados.numero_empleado > 20 || clave_existente);
+                } while (data->data_empleados.numero_empleado < 1000 || data->data_empleados.numero_empleado > 10000 || clave_existente);
 
                 do
                 {
@@ -1739,6 +1740,8 @@ extern void controlar_ventas(struct Conjunto_Datos *data)
                 cliente_actual = true;
                 empleado_actual = true;
 
+                calcular_precios_por_cliente(data);
+
                 limpiar_terminal();
 
                 printf("* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n\n");
@@ -1757,6 +1760,8 @@ extern void controlar_ventas(struct Conjunto_Datos *data)
                     printf("TOTAL DE LA VENTA AL CLIENTE (%s): $%.2f\n\n", data->data_clientes.nombre_cliente, data->data_ventas.precio);
 
                 }
+
+                data->data_ventas.comision_empleado = 0.05;
 
                 fwrite(&data->data_ventas, sizeof(data->data_ventas), 1, data->data_files.file_control_ventas);
 
@@ -1834,6 +1839,7 @@ extern void controlar_ventas(struct Conjunto_Datos *data)
                     if (strcmp(existencia_ventas, "si") != 0 && strcmp(existencia_ventas, "no") != 0)
 
                         validar_errores_por_SO();
+
                 } while (strcmp(existencia_ventas, "si") != 0 && strcmp(existencia_ventas, "no") != 0);
             }
         }
@@ -1845,6 +1851,237 @@ extern void controlar_ventas(struct Conjunto_Datos *data)
 
 extern void controlar_compras(struct Conjunto_Datos *data)
 {
+    char existencia_compras[3], existencia_articulos[3];
+    bool proveedor_actual = true, clave_existente = false, cantidad_existente = false, empleado_actual = true;
+    const int file_articulos = 1, file_proveedores = 3;
+    float precio = 0.0;
+
+    data->data_files.file_control_compras = fopen(data->data_dir.ruta_file_control_compras, "rb+");
+
+    if (data->data_files.file_control_compras == NULL)
+
+        fprintf(stderr, "ERROR: NO SE PUDO ABRIR CORRECTAMENTE EL ARCHIVO DE CONTROL DE VENTAS");
+
+    else
+    {
+        do
+        {
+            limpiar_terminal();
+
+            printf("Existen compras? Si/No: ");
+            limpiar_buffer_STDIN();
+            fgets(existencia_compras, sizeof(existencia_compras), stdin);
+
+            existencia_compras[strcspn(existencia_compras, "\n")] = '\0';
+
+            convertir_cadena_a_minuscula(existencia_compras);
+
+            if (strcmp(existencia_compras, "si") != 0 && strcmp(existencia_compras, "no") != 0)
+
+                validar_errores_por_SO();
+
+        } while (strcmp(existencia_compras, "si") != 0 && strcmp(existencia_compras, "no") != 0);
+
+        while (strcmp(existencia_compras, "si") == 0)
+        {
+            if (proveedor_actual)
+            {
+                data->data_compras.precio = 0.0;
+
+                do
+                {
+                    do
+                    {
+                        limpiar_terminal();
+
+                        printf("Número de proveedor: ");
+                        limpiar_buffer_STDIN();
+                    } while (scanf("%d", &data->data_compras.numero_proveedor) != 1);
+
+                    if (data->data_compras.numero_proveedor < 1 || data->data_compras.numero_proveedor > 10)
+
+                        validar_errores_por_SO();
+
+                    else
+                    {
+                        clave_existente = verificar_existencia_claves(data->data_files.file_proveedor, &data->data_compras.numero_proveedor, &file_proveedores);
+
+                        if (!clave_existente)
+                        {
+                            limpiar_terminal();
+                            puts("El proveedor ingresado no existe en el sistema. . .");
+                            pausar_terminal();
+                        }
+                    }
+
+                } while (data->data_compras.numero_proveedor < 1 || data->data_compras.numero_proveedor > 10 || !clave_existente);
+
+                proveedor_actual = false;
+            }
+
+            do
+            {
+                do
+                {
+                    limpiar_terminal();
+
+                    printf("Número de artículo: ");
+                    limpiar_buffer_STDIN();
+                } while (scanf("%d", &data->data_compras.numero_articulo) != 1);
+
+                if (data->data_compras.numero_articulo < 1 || data->data_compras.numero_articulo > 100)
+
+                    validar_errores_por_SO();
+
+                else if (data->data_contador.articulos_neto > 0)
+                    {
+                        clave_existente = verificar_existencia_claves(data->data_files.file_articulos, &data->data_compras.numero_articulo, &file_articulos);
+
+                        if (!clave_existente)
+                        {
+                            limpiar_terminal();
+                            puts("El artículo ingresado no existe en el sistema. . .");
+                            pausar_terminal();
+                        }
+                    }
+
+            } while (data->data_compras.numero_articulo < 1 || data->data_compras.numero_articulo > 100 || !clave_existente);
+
+            do
+            {
+                do
+                {
+                    limpiar_terminal();
+
+                    printf("Cantidad a comprar: ");
+                    limpiar_buffer_STDIN();
+                } while (scanf("%d", &data->data_compras.cantidad) != 1);
+
+                if (data->data_compras.cantidad < 1)
+
+                    validar_errores_por_SO();
+
+                else
+                {
+                    cantidad_existente = buscar_cantidades(data, &data->data_compras.numero_articulo, &data->data_compras.cantidad);
+
+                    if (!cantidad_existente)
+                    {
+                        limpiar_terminal();
+                        puts("No manejamos esa cantidad que usted pide. . .");
+                        pausar_terminal();
+                    }
+                }
+
+            } while (data->data_compras.cantidad < 1 || !cantidad_existente);
+
+            buscar_precios(data, &precio);
+            printf("Precio neto: $%.2f\n\n", precio);
+            pausar_terminal();
+
+            if (empleado_actual)
+            {
+                do
+                {
+                    do
+                    {
+                        limpiar_terminal();
+
+                        printf("Número de emplead@: ");
+                        limpiar_buffer_STDIN();
+                    } while (scanf("%d", &data->data_ventas.numero_empleado) != 1);
+
+                    if (data->data_ventas.numero_empleado <= 0 || data->data_ventas.numero_empleado > 20)
+
+                        validar_errores_por_SO();
+
+                    else if (data->data_contador.empleados_neto > 0)
+                        {
+                            clave_existente = verificar_existencia_claves(data->data_files.file_empleados, &data->data_ventas.numero_empleado, &file_empleados);
+
+                            if (!clave_existente)
+                            {
+                                limpiar_terminal();
+                                puts("El empleado ingresado no existe en el sistema. . .");
+                                pausar_terminal();
+                            }
+                        }
+
+                } while (data->data_empleados.numero_empleado <= 0 || data->data_empleados.numero_empleado > 20 || !clave_existente);
+
+                empleado_actual = false;
+            }
+
+            do
+            {
+                limpiar_terminal();
+
+                printf("Agregar otro artículo? Si/No: ");
+                limpiar_buffer_STDIN();
+                fgets(existencia_articulos, sizeof(existencia_articulos), stdin);
+
+                existencia_articulos[strcspn(existencia_articulos, "\n")] = '\0';
+
+                convertir_cadena_a_minuscula(existencia_articulos);
+
+                if (strcmp(existencia_articulos, "si") != 0 && strcmp(existencia_articulos, "no") != 0)
+
+                    validar_errores_por_SO();
+            } while (strcmp(existencia_articulos, "si") != 0 && strcmp(existencia_articulos, "no") != 0);
+
+            if (strcmp(existencia_articulos, "no") == 0)
+            {
+                cliente_actual = true;
+                empleado_actual = true;
+
+                calcular_precios_por_cliente(data);
+
+                limpiar_terminal();
+
+                printf("* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n\n");
+
+                data->data_files.file_clientes = fopen(data->data_dir.ruta_file_clientes, "rb");
+
+                if (data->data_files.file_clientes == NULL)
+
+                    printf("TOTAL DE LA VENTA AL CLIENTE #%d: $%.2f\n\n", data->data_ventas.numero_cliente, data->data_ventas.precio);
+
+                else
+                {
+                    fseek(data->data_files.file_clientes, data->data_ventas.numero_cliente * sizeof(data->data_clientes), SEEK_SET);
+                    fread(&data->data_clientes, sizeof(data->data_clientes), 1, data->data_files.file_clientes);
+
+                    printf("TOTAL DE LA VENTA AL CLIENTE (%s): $%.2f\n\n", data->data_clientes.nombre_cliente, data->data_ventas.precio);
+
+                }
+
+                data->data_ventas.comision_empleado = 0.05;
+
+                fwrite(&data->data_ventas, sizeof(data->data_ventas), 1, data->data_files.file_control_ventas);
+
+                do
+                {
+                    limpiar_terminal();
+
+                    printf("Agregar otra venta? Si/No: ");
+                    limpiar_buffer_STDIN();
+                    fgets(existencia_ventas, sizeof(existencia_ventas), stdin);
+
+                    existencia_ventas[strcspn(existencia_ventas, "\n")] = '\0';
+
+                    convertir_cadena_a_minuscula(existencia_ventas);
+
+                    if (strcmp(existencia_ventas, "si") != 0 && strcmp(existencia_ventas, "no") != 0)
+
+                        validar_errores_por_SO();
+
+                } while (strcmp(existencia_ventas, "si") != 0 && strcmp(existencia_ventas, "no") != 0);
+            }
+        }
+
+        fclose(data->data_files.file_control_ventas);
+
+    }
 
 }
 
@@ -1968,6 +2205,9 @@ extern void calcular_precios_por_cliente(struct Conjunto_Datos *all_data)
 
     all_data->data_ventas.precio = (all_data->data_ventas.cantidad * all_data->data_articulos.precio_venta);
     all_data->data_ventas.precio -= (all_data->data_ventas.precio * all_data->data_clientes.descuento_cliente);
+
+    fclose(all_data->data_files.file_clientes);
+    fclose(all_data->data_files.file_articulos);
 
 }
 
@@ -2108,12 +2348,15 @@ extern bool verificar_existencia_claves(FILE *file, int *clave, const int *t_o_f
 
         case 4: // Empleados
 
-            fseek(file, (*clave) * sizeof(employees), SEEK_SET);
-            fread(&employees, sizeof(employees), 1, file);
+            rewind(file);
 
-            if (employees.numero_empleado == (*clave))
+            while (fread(&employees, sizeof(employees), 1, file))
+            {
+                if ( (*clave) == employees.numero_empleado )
 
-                return true;
+                    return true;
+
+            }
 
             break;
     }
