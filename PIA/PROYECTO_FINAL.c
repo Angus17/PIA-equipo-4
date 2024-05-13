@@ -117,7 +117,7 @@ extern void realizar_cambios_inventario(struct Conjunto_Datos *);
 // FUNCIONES DE OPCION "REPORTES"
 
 extern void imprimir_articulos(FILE *, struct Datos_Articulos *, const char *, const int *);
-extern void venta_fecha(FILE *, struct Datos_Articulos *, const char *);
+extern void venta_fecha(FILE *, struct Datos_Control_Ventas *, const char *);
 extern void venta_articulo(struct Conjunto_Datos *);
 extern void listar_articulos(FILE *, struct Datos_Articulos *, const char *);
 extern void consultar_saldos_pagar(struct Conjunto_Datos *);
@@ -1548,7 +1548,7 @@ extern void capturar_proveedores(struct Conjunto_Datos *data)
 extern void controlar_ventas(struct Conjunto_Datos *data)
 {
     char existencia_ventas[3], facturar[3], existencia_articulos[3];
-    bool cliente_actual = true, clave_existente = false, cantidad_existente = false, empleado_actual = true;
+    bool cliente_actual = true, clave_existente = false, cantidad_existente = false, empleado_actual = true, fecha_actual = true;
     const int file_articulos = 1, file_clientes = 2, file_empleados = 4, file_ventas = 1;
     float precio = 0.0;
     int mes_actual;
@@ -1677,38 +1677,44 @@ extern void controlar_ventas(struct Conjunto_Datos *data)
 
             } while (data->data_ventas.cantidad < 1 || !cantidad_existente);
 
-            do
+            if (fecha_actual)
             {
                 do
                 {
-                    limpiar_terminal();
+                    do
+                    {
+                        limpiar_terminal();
 
-                    printf("Mes de venta (1-%d): ", mes_actual);
-                    limpiar_buffer_STDIN();
-                } while (scanf("%d", &data->data_ventas.mes) != 1);
+                        printf("Mes de venta (1-%d): ", mes_actual);
+                        limpiar_buffer_STDIN();
+                    } while (scanf("%d", &data->data_ventas.mes) != 1);
 
-                if (data->data_ventas.mes < 1 || data->data_ventas.mes > mes_actual)
+                    if (data->data_ventas.mes < 1 || data->data_ventas.mes > mes_actual)
 
-                    validar_errores_por_SO();
+                        validar_errores_por_SO();
 
 
-            } while (data->data_ventas.mes < 1 || data->data_ventas.mes > mes_actual);
+                } while (data->data_ventas.mes < 1 || data->data_ventas.mes > mes_actual);
 
-            do
-            {
                 do
                 {
-                    limpiar_terminal();
+                    do
+                    {
+                        limpiar_terminal();
 
-                    printf("Dia de venta: ");
-                    limpiar_buffer_STDIN();
-                } while (scanf("%d", &data->data_ventas.dia) != 1);
+                        printf("Dia de venta: ");
+                        limpiar_buffer_STDIN();
+                    } while (scanf("%d", &data->data_ventas.dia) != 1);
 
-                if (!dia_valido(&data->data_ventas.dia, &data->data_ventas.mes, NULL, &file_ventas))
+                    if (!dia_valido(&data->data_ventas.dia, &data->data_ventas.mes, NULL, &file_ventas))
 
-                    validar_errores_por_SO();
+                        validar_errores_por_SO();
 
-            } while (!dia_valido(&data->data_ventas.dia, &data->data_ventas.mes, NULL, &file_ventas));
+                } while (!dia_valido(&data->data_ventas.dia, &data->data_ventas.mes, NULL, &file_ventas));
+
+                fecha_actual = false;
+            }
+
 
             buscar_precios(data, &precio, &file_ventas, NULL);
 
@@ -1769,6 +1775,7 @@ extern void controlar_ventas(struct Conjunto_Datos *data)
             {
                 cliente_actual = true;
                 empleado_actual = true;
+                fecha_actual = true;
 
                 calcular_precios(data, &file_ventas, NULL);
 
@@ -2858,10 +2865,59 @@ extern void imprimir_articulos(FILE *file, struct Datos_Articulos *data_articles
     }
 }
 
-extern void venta_fecha(FILE *, struct Datos_Articulos *, const char *)
+extern void venta_fecha(FILE *file, struct Datos_Control_Ventas *data_sell, const char *dir)
 {
+    int dia, mes, mes_actual;
+    bool venta_encontrada;
+    const int file_ventas = 1;
+    time_t tiempo = time(NULL);
+    struct tm *time = localtime(&tiempo);
 
-    
+    mes_actual = time->tm_mon + 1;
+
+    file = fopen(dir, "rb");
+
+    if (file == NULL)
+
+        fprintf(stderr, "ERROR AL OBTENER LOS DATOS. . .");
+
+    else
+    {
+        do
+        {
+            do
+            {
+                limpiar_terminal();
+
+                printf("Mes de venta (1-%d): ", mes_actual);
+                limpiar_buffer_STDIN();
+            } while (scanf("%d", &mes) != 1);
+
+            if (mes < 1 || mes > mes_actual)
+
+                validar_errores_por_SO();
+
+
+        } while (mes < 1 || mes > mes_actual);
+
+        do
+        {
+            do
+            {
+                limpiar_terminal();
+
+                printf("Dia de venta: ");
+                limpiar_buffer_STDIN();
+            } while (scanf("%d", &dia) != 1);
+
+            if (!dia_valido(&dia, &mes, NULL, &file_ventas))
+
+                validar_errores_por_SO();
+
+        } while (!dia_valido(&dia, &mes, NULL, &file_ventas));
+
+        venta_encontrada = 
+    }
 }
 
 extern bool buscar_proveedores(const int *proveedor, const int *total_proveedores)
@@ -2891,6 +2947,11 @@ extern bool validar_cadenas(const char *caracter)
     }
 
     return true;
+}
+
+extern bool existencia_venta(FILE *, struct Datos_Control_Ventas *, )
+{
+
 }
 
 extern void liberar_memoria_salida_de_error(struct Directorios *dir)
