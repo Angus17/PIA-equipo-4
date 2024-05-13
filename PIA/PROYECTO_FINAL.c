@@ -108,14 +108,14 @@ extern void capturar_proveedores( struct Conjunto_Datos * );
 extern void controlar_ventas( struct Conjunto_Datos * );
 extern void controlar_compras( struct Conjunto_Datos * );
 extern void controlar_inventario( struct Conjunto_Datos * );
-extern void manejar_reportes();
+extern void manejar_reportes(struct Conjunto_Datos *);
 extern void refrescar_contadores( struct Conjunto_Datos * );
 extern void buscar_precios( struct Conjunto_Datos *, float *, const int * , const int *);
 extern void calcular_precios( struct Conjunto_Datos *, const int *, const int * );
 extern void realizar_cambios_inventario(struct Conjunto_Datos *);
 
 // VALIDACIONES
-
+extern bool existencia_venta(struct Conjunto_Datos *); // Para menu de reportes, valida que existan ventas
 extern bool buscar_existencia_articulos_proveedor(FILE *, const char *, struct Datos_Control_Compras * );
 extern bool buscar_cantidades(struct Conjunto_Datos *, const int *, const int *);
 extern bool buscar_proveedor_articulo(struct Conjunto_Datos *, int *);
@@ -368,14 +368,9 @@ int main(void)
                 break;
 
             case 8:
-                if (false)
-                {
-                    
-                }
-                else
-                {
-                    
-                }
+
+                    manejar_reportes(&datos_struct);
+
                 break;
 
             case 9:
