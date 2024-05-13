@@ -114,6 +114,17 @@ extern void buscar_precios( struct Conjunto_Datos *, float *, const int * , cons
 extern void calcular_precios( struct Conjunto_Datos *, const int *, const int * );
 extern void realizar_cambios_inventario(struct Conjunto_Datos *);
 
+// FUNCIONES DE OPCION "REPORTES"
+
+extern void imprimir_articulos(FILE *, struct Datos_Articulos *, const char *, const int *);
+extern void venta_fecha(FILE *, struct Datos_Articulos *, const char *);
+extern void venta_articulo(struct Conjunto_Datos *);
+extern void listar_articulos(FILE *, struct Datos_Articulos *, const char *);
+extern void consultar_saldos_pagar(struct Conjunto_Datos *);
+extern void calcular_comisiones(struct Conjunto_Datos *);
+extern void buscar_compras_pendientes(FILE *, struct Datos_Control_Compras *, const char *);
+
+
 // VALIDACIONES
 extern bool existencia_venta(struct Conjunto_Datos *); // Para menu de reportes, valida que existan ventas
 extern bool buscar_existencia_articulos_proveedor(FILE *, const char *, struct Datos_Control_Compras * );
@@ -2304,8 +2315,88 @@ extern bool verificar_articulo_punto_reorden(FILE *file, struct Datos_Articulos 
 
 extern void manejar_reportes(struct Conjunto_Datos *data)
 {
+    char opcion;
+    do
+    {
+        do
+        {
+            limpiar_terminal();
 
+            printf("* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n\n");
+            printf("* *%45s%28s\n\n", "REPORTES", "* *");
+            printf("* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n\n");
+            printf("%s\n", "a) Listado de articulos");
+            printf("%s\n", "b) Total de venta por fecha");
+            printf("%s\n", "c) Total de venta por articulo");
+            printf("%s\n", "d) Listado de articulos a solicitar");
+            printf("%s\n", "e) Saldos por pagar");
+            printf("%s\n", "f) Calculo de comisiones");
+            printf("%s\n", "g) Compras pendientes de recepcion");
+            printf("%s\n", "h) Salir");
+            printf("%10s: ", "Opcion");
+
+            limpiar_buffer_STDIN();
+
+            scanf(" %c", &opcion);
+
+            opcion = tolower(opcion);
+
+            if (opcion < 'a' || opcion > 'h')
+
+                validar_errores_por_SO();
+
+        } while (opcion < 'a' || opcion > 'h');
+
+
+        switch (opcion)
+        {
+            case 'a':
+                if (data->data_contador.articulos_neto > 0)
+
+                    listar_articulos(data->data_files.file_articulos, &data->data_articulos, data->data_dir.ruta_file_articulos);
+
+                else
+
+                    puts("No existen artículos registrados en el sistema. . .");
+
+                break;
+
+            case 'b':
+
+                break;
+
+            case 'c':
+
+                break;
+
+            case 'd':
+
+                break;
+
+            case 'e':
+
+                break;
+
+            case 'f':
+
+                break;
+
+            case 'g':
+
+                break;
+        }
+
+        if (opcion != 'h')
+
+            pausar_terminal();
+
+    } while (opcion != 'h');
+
+        limpiar_terminal();
+        puts("Regresando al menu principal. . .");
 }
+
+
 
 extern void refrescar_contadores(struct Conjunto_Datos *data)
 {
@@ -2726,6 +2817,51 @@ extern bool verificar_existencia_claves(FILE *file, const char *dir, int *clave,
 
     fclose(file);
     return false;
+}
+
+extern void imprimir_articulos(FILE *file, struct Datos_Articulos *data_articles, const char *dir, const int *proveedores_neto)
+{
+    int i;
+
+    file = fopen(dir, "rb");
+
+    if (file == NULL)
+
+        fprintf(stderr, "NO SE PUDIERON OBTENER LOS DATOS. . .");
+
+    else
+    {
+        rewind(file);
+
+        printf("%-30s %-40s %-35s %-30s %-20s %-20s %-s\n\n", "# ARTICULO", "DESCRIPCION", "PUNTO DE REORDEN", "INVENTARIO", "# PROVEEDOR", "$ COMPRA", "$ VENTA");
+
+        while (fread(data_articles, sizeof(*data_articles), 1, file))
+        {
+            printf("%-30d ", data_articles->numero_articulo);
+            printf("%-40s ", data_articles->descripcion_articulo);
+            printf("%-35d ", data_articles->punto_reorden);
+            printf("%-30d ", data_articles->inventario);
+
+            for ( i = 0; i < *proveedores_neto; i++)
+            {
+                if (*(data_articles->numero_proveedor + i) != 0 && *(data_articles->precio_compra + i) != 0.0)
+                {
+                    printf("%-20d ", *(data_articles->numero_proveedor + i));
+                    printf("%-20d ", *(data_articles->precio_compra + i));
+                }
+            }
+
+            printf("%-lf ", data_articles->precio_venta);
+        }
+
+        fclose(file);
+    }
+}
+
+extern void venta_fecha(FILE *, struct Datos_Articulos *, const char *)
+{
+
+    
 }
 
 extern bool buscar_proveedores(const int *proveedor, const int *total_proveedores)
