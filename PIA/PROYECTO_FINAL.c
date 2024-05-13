@@ -1,5 +1,6 @@
 #include "Cabeceras.h"
 
+
 struct Direcciones_Fecha
 {
     char direccion[200], rfc[14];
@@ -98,47 +99,49 @@ struct Conjunto_Datos
     struct Directorios data_dir;
 };
 
+
+
+
 // FUNCIONES PRINCIPALES
 
-extern bool create_binary_files( struct Conjunto_Datos * );
-extern void capturar_articulos( struct Conjunto_Datos * );
-extern void capturar_empleados( struct Conjunto_Datos * );
-extern void capturar_clientes( struct Conjunto_Datos * );
-extern void capturar_proveedores( struct Conjunto_Datos * );
-extern void controlar_ventas( struct Conjunto_Datos * );
-extern void controlar_compras( struct Conjunto_Datos * );
-extern void controlar_inventario( struct Conjunto_Datos * );
-extern void manejar_reportes(struct Conjunto_Datos *);
-extern void refrescar_contadores( struct Conjunto_Datos * );
-extern void buscar_precios( struct Conjunto_Datos *, float *, const int * , const int *);
-extern void calcular_precios( struct Conjunto_Datos *, const int *, const int * );
-extern void realizar_cambios_inventario(struct Conjunto_Datos *);
+bool create_binary_files( struct Conjunto_Datos * );
+void capturar_articulos( struct Conjunto_Datos * );
+void capturar_empleados( struct Conjunto_Datos * );
+void capturar_clientes( struct Conjunto_Datos * );
+void capturar_proveedores( struct Conjunto_Datos * );
+void controlar_ventas( struct Conjunto_Datos * );
+void controlar_compras( struct Conjunto_Datos * );
+void controlar_inventario( struct Conjunto_Datos * );
+void manejar_reportes(struct Conjunto_Datos *);
+void refrescar_contadores( struct Conjunto_Datos * );
+void buscar_precios( struct Conjunto_Datos *, float *, const int * , const int *);
+void calcular_precios( struct Conjunto_Datos *, const int *, const int * );
+void realizar_cambios_inventario(struct Conjunto_Datos *);
 
 // FUNCIONES DE OPCION "REPORTES"
 
-extern void imprimir_articulos(FILE *, struct Datos_Articulos *, const char *, const int *);
-extern void venta_fecha(FILE *, struct Datos_Control_Ventas *, const char *);
-extern void venta_articulo(struct Conjunto_Datos *);
-extern void listar_articulos(FILE *, struct Datos_Articulos *, const char *);
-extern void consultar_saldos_pagar(struct Conjunto_Datos *);
-extern void calcular_comisiones(struct Conjunto_Datos *);
-extern void buscar_compras_pendientes(FILE *, struct Datos_Control_Compras *, const char *);
+void imprimir_articulos(FILE *, struct Datos_Articulos *, const char *, const int *);
+void venta_fecha(FILE *, struct Datos_Control_Ventas *, const char *);
+void venta_articulo(struct Conjunto_Datos *);
+void consultar_saldos_pagar(struct Conjunto_Datos *);
+void calcular_comisiones(struct Conjunto_Datos *);
+void buscar_compras_pendientes(FILE *, struct Datos_Control_Compras *, const char *);
 
 
 // VALIDACIONES
-extern bool existencia_venta(struct Conjunto_Datos *); // Para menu de reportes, valida que existan ventas
-extern bool buscar_existencia_articulos_proveedor(FILE *, const char *, struct Datos_Control_Compras * );
-extern bool buscar_cantidades(struct Conjunto_Datos *, const int *, const int *);
-extern bool buscar_proveedor_articulo(struct Conjunto_Datos *, int *);
-extern bool es_bisiesto( const int * );
-extern bool mes_30_dias( const int * );
-extern bool dia_valido( const int *, const int *, const int *, const int * );
-extern void convertir_cadena_a_minuscula( char * );
-extern bool verificar_articulo_punto_reorden(FILE *, struct Datos_Articulos *, const char *, const int *);
-extern bool verificar_existencia_claves( FILE *, const char *, int *, const int * );
-extern bool buscar_proveedores( const int *, const int * );
-extern bool validar_cadenas(const char * );
-extern void liberar_memoria_salida_de_error(struct Directorios *);
+bool existencia_venta(struct Conjunto_Datos *); // Para menu de reportes, valida que existan ventas
+bool buscar_existencia_articulos_proveedor(FILE *, const char *, struct Datos_Control_Compras * );
+bool buscar_cantidades(struct Conjunto_Datos *, const int *, const int *);
+bool buscar_proveedor_articulo(struct Conjunto_Datos *, int *);
+bool es_bisiesto( const int * );
+bool mes_30_dias( const int * );
+bool dia_valido( const int *, const int *, const int *, const int * );
+void convertir_cadena_a_minuscula( char * );
+bool verificar_articulo_punto_reorden(FILE *, struct Datos_Articulos *, const char *, const int *);
+bool verificar_existencia_claves( FILE *, const char *, int *, const int * );
+bool buscar_proveedores( const int *, const int * );
+bool validar_cadenas(const char * );
+void liberar_memoria_salida_de_error(struct Directorios *);
 
 // FUNCIONES PARA EL SISTEMA
 
@@ -408,7 +411,8 @@ int main(void)
     return EXIT_SUCCESS;
 }
 
-extern bool create_binary_files(struct Conjunto_Datos *data_all)
+
+bool create_binary_files(struct Conjunto_Datos *data_all)
 {
     int i;
     char respuesta[3];
@@ -572,7 +576,7 @@ extern bool create_binary_files(struct Conjunto_Datos *data_all)
     return true;
 }
 
-extern void capturar_articulos(struct Conjunto_Datos *data)
+void capturar_articulos(struct Conjunto_Datos *data)
 {
     char respuesta[3], proveedor_respuesta[3];
     bool descripcion_correcta, provedor_articulo, clave_existente = false;
@@ -789,7 +793,7 @@ extern void capturar_articulos(struct Conjunto_Datos *data)
             }
 
 
-            fseek(data->data_files.file_articulos, data->data_contador.articulos_neto * sizeof(data->data_articulos), SEEK_SET);
+            fseek(data->data_files.file_articulos, (data->data_articulos.numero_articulo - 1) * sizeof(data->data_articulos), SEEK_SET);
             fwrite(&data->data_articulos, sizeof(data->data_articulos), 1, data->data_files.file_articulos);
 
             data->data_contador.articulos_neto++;
@@ -826,7 +830,7 @@ extern void capturar_articulos(struct Conjunto_Datos *data)
     }
 }
 
-extern void capturar_clientes(struct Conjunto_Datos *data)
+void capturar_clientes(struct Conjunto_Datos *data)
 {
     char existencia_cliente[3], expresion[] = "^[A-Za-z0-9._-]+@[a-z]+\\.[a-z]{2,}$";
     char expresion_3[] = "^([A-Z]{4})([0-9]{6})([A-Z0-9]{3})$";
@@ -1066,7 +1070,7 @@ extern void capturar_clientes(struct Conjunto_Datos *data)
     regfree(&regular_3);
 }
 
-extern void capturar_empleados(struct Conjunto_Datos *data)
+void capturar_empleados(struct Conjunto_Datos *data)
 {
     char existencia_empleado[3], expresion[] = "^[A-Za-z0-9._-]+@[a-z]+\\.[a-z]{2,}$";
     char expresion_3[] = "^([A-Z]{4})([0-9]{6})([A-Z0-9]{3})$";
@@ -1263,7 +1267,7 @@ extern void capturar_empleados(struct Conjunto_Datos *data)
 
                 data->data_contador.empleados_neto++;
 
-                fseek(data->data_files.file_empleados, data->data_contador.empleados_neto * sizeof(data->data_empleados), SEEK_SET);
+                fseek(data->data_files.file_empleados, (data->data_empleados.numero_empleado - 1) * sizeof(data->data_empleados), SEEK_SET);
                 fwrite(&data->data_empleados, sizeof(data->data_empleados), 1, data->data_files.file_empleados);
 
                 do
@@ -1294,11 +1298,11 @@ extern void capturar_empleados(struct Conjunto_Datos *data)
     regfree(&regular_3);
 }
 
-extern void capturar_proveedores(struct Conjunto_Datos *data)
+void capturar_proveedores(struct Conjunto_Datos *data)
 {
     char existencia_proveedor[3], expresion[] = "^[A-Za-z0-9._-]+@[a-z]+\\.[a-z]{2,}$";
     char expresion_3[] = "^([A-Z]{4})([0-9]{6})([A-Z0-9]{3})$";
-    char expresion_2[] = "^([A-Za-z0-9]+) #([0-9]+) ([A-Za-z ]+)\\, ([A-Za-z ]+)\\, ([A-Za-z ]+)$";
+    char expresion_2[] = "^([A-Za-z0-9 ]+) #([0-9]+) ([A-Za-z ]+)\\, ([A-Za-z ]+)\\, ([A-Za-z ]+)$";
     regex_t regular, regular_2, regular_3;
     bool descripcion_correcta, clave_existente;
     int regex = regcomp(&regular, expresion, REG_EXTENDED), anio, mes;
@@ -1507,7 +1511,7 @@ extern void capturar_proveedores(struct Conjunto_Datos *data)
 
                 data->data_contador.proveedores_neto++;
 
-                fseek(data->data_files.file_proveedor, data->data_proveedores.numero_proveedor * sizeof(data->data_proveedores), SEEK_SET);
+                fseek(data->data_files.file_proveedor, (data->data_proveedores.numero_proveedor - 1) * sizeof(data->data_proveedores), SEEK_SET);
                 fwrite(&data->data_proveedores, sizeof(data->data_proveedores), 1, data->data_files.file_proveedor);
 
                 if (data->data_contador.proveedores_neto < 10)
@@ -1545,7 +1549,7 @@ extern void capturar_proveedores(struct Conjunto_Datos *data)
     regfree(&regular_3);
 }
 
-extern void controlar_ventas(struct Conjunto_Datos *data)
+void controlar_ventas(struct Conjunto_Datos *data)
 {
     char existencia_ventas[3], facturar[3], existencia_articulos[3];
     bool cliente_actual = true, clave_existente = false, cantidad_existente = false, empleado_actual = true, fecha_actual = true;
@@ -1899,7 +1903,7 @@ extern void controlar_ventas(struct Conjunto_Datos *data)
     }
 }
 
-extern void controlar_compras(struct Conjunto_Datos *data)
+void controlar_compras(struct Conjunto_Datos *data)
 {
     char existencia_compras[3], existencia_articulos[3];
     bool proveedor_actual = true, clave_existente = false, proveedor_que_lo_maneja, punto_reorden_alcanzado = false;
@@ -2117,7 +2121,7 @@ extern void controlar_compras(struct Conjunto_Datos *data)
 
 }
 
-extern void controlar_inventario(struct Conjunto_Datos *data)
+void controlar_inventario(struct Conjunto_Datos *data)
 {
     char recepcion[3];
     bool clave_existente, proveedor_pendiente_entrega, id_existente;
@@ -2299,7 +2303,7 @@ extern void controlar_inventario(struct Conjunto_Datos *data)
     }
 }
 
-extern bool verificar_articulo_punto_reorden(FILE *file, struct Datos_Articulos *data_articles, const char *dir, const int *numero_articulo)
+bool verificar_articulo_punto_reorden(FILE *file, struct Datos_Articulos *data_articles, const char *dir, const int *numero_articulo)
 {
     file = fopen(dir, "rb");
 
@@ -2309,7 +2313,7 @@ extern bool verificar_articulo_punto_reorden(FILE *file, struct Datos_Articulos 
         exit(EXIT_FAILURE);
     }
 
-    fseek(file, (*numero_articulo) * sizeof(*data_articles), SEEK_SET);
+    fseek(file, ((*numero_articulo) - 1) * sizeof(*data_articles), SEEK_SET);
     fread(data_articles, sizeof(*data_articles), 1, file);
 
     if (data_articles->inventario <= data_articles->punto_reorden)
@@ -2320,7 +2324,7 @@ extern bool verificar_articulo_punto_reorden(FILE *file, struct Datos_Articulos 
 
 }
 
-extern void manejar_reportes(struct Conjunto_Datos *data)
+void manejar_reportes(struct Conjunto_Datos *data)
 {
     char opcion;
     do
@@ -2360,7 +2364,7 @@ extern void manejar_reportes(struct Conjunto_Datos *data)
             case 'a':
                 if (data->data_contador.articulos_neto > 0)
 
-                    listar_articulos(data->data_files.file_articulos, &data->data_articulos, data->data_dir.ruta_file_articulos);
+                    imprimir_articulos(data->data_files.file_articulos, &data->data_articulos, data->data_dir.ruta_file_articulos, &data->data_contador.proveedores_neto);
 
                 else
 
@@ -2403,9 +2407,7 @@ extern void manejar_reportes(struct Conjunto_Datos *data)
         puts("Regresando al menu principal. . .");
 }
 
-
-
-extern void refrescar_contadores(struct Conjunto_Datos *data)
+void refrescar_contadores(struct Conjunto_Datos *data)
 {
     data->data_files.file_articulos = fopen(data->data_dir.ruta_file_articulos, "rb");
     data->data_files.file_empleados = fopen(data->data_dir.ruta_file_empleados, "rb");
@@ -2443,11 +2445,11 @@ extern void refrescar_contadores(struct Conjunto_Datos *data)
             data->data_contador.empleados_neto++;
     }
 
-    while (fread(&data->data_articulos, sizeof(data->data_articulos), 1, data->data_files.file_articulos))
+    while (fread(&data->data_proveedores, sizeof(data->data_proveedores), 1, data->data_files.file_proveedor))
     {
-        if (data->data_articulos.numero_articulo != 0)
+        if (data->data_proveedores.numero_proveedor != 0)
 
-            data->data_contador.articulos_neto++;
+            data->data_contador.proveedores_neto++;
     }
 
     fclose(data->data_files.file_articulos);
@@ -2455,7 +2457,7 @@ extern void refrescar_contadores(struct Conjunto_Datos *data)
     fclose(data->data_files.file_proveedor);
 }
 
-extern void buscar_precios(struct Conjunto_Datos *data, float *precio_articulo, const int *t_o_f, const int *proveedor)
+void buscar_precios(struct Conjunto_Datos *data, float *precio_articulo, const int *t_o_f, const int *proveedor)
 {
     data->data_files.file_articulos = fopen(data->data_dir.ruta_file_articulos, "rb");
 
@@ -2465,14 +2467,14 @@ extern void buscar_precios(struct Conjunto_Datos *data, float *precio_articulo, 
 
     if (*t_o_f == 1)
     {
-        fseek(data->data_files.file_articulos, data->data_ventas.numero_articulo * sizeof(data->data_articulos), SEEK_SET);
+        fseek(data->data_files.file_articulos, (data->data_ventas.numero_articulo - 1) * sizeof(data->data_articulos), SEEK_SET);
         fread(&data->data_articulos, sizeof(data->data_articulos), 1, data->data_files.file_articulos);
 
         (*precio_articulo) = data->data_articulos.precio_venta;
     }
     else
     {
-        fseek(data->data_files.file_articulos, data->data_compras.numero_articulo * sizeof(data->data_articulos), SEEK_SET);
+        fseek(data->data_files.file_articulos, (data->data_compras.numero_articulo - 1) * sizeof(data->data_articulos), SEEK_SET);
         fread(&data->data_articulos, sizeof(data->data_articulos), 1, data->data_files.file_articulos);
 
         (*precio_articulo) = *(data->data_articulos.precio_compra + (*proveedor));
@@ -2482,7 +2484,7 @@ extern void buscar_precios(struct Conjunto_Datos *data, float *precio_articulo, 
     fclose(data->data_files.file_articulos);
 }
 
-extern bool buscar_existencia_articulos_proveedor(FILE *file_compras, const char *dir, struct Datos_Control_Compras *data_compras)
+bool buscar_existencia_articulos_proveedor(FILE *file_compras, const char *dir, struct Datos_Control_Compras *data_compras)
 {
     file_compras = fopen(dir, "rb");
 
@@ -2506,7 +2508,7 @@ extern bool buscar_existencia_articulos_proveedor(FILE *file_compras, const char
     return false;
 }
 
-extern bool buscar_cantidades(struct Conjunto_Datos *all_data, const int *numero_articulo, const int *cantidad_ingresada)
+bool buscar_cantidades(struct Conjunto_Datos *all_data, const int *numero_articulo, const int *cantidad_ingresada)
 {
     all_data->data_files.file_articulos = fopen(all_data->data_dir.ruta_file_articulos, "rb");
 
@@ -2516,7 +2518,7 @@ extern bool buscar_cantidades(struct Conjunto_Datos *all_data, const int *numero
         exit(EXIT_FAILURE);
     }
 
-    fseek(all_data->data_files.file_articulos, (*numero_articulo) * sizeof(all_data->data_articulos), SEEK_SET);
+    fseek(all_data->data_files.file_articulos, ((*numero_articulo) - 1) * sizeof(all_data->data_articulos), SEEK_SET);
     fread(&all_data->data_articulos, sizeof(all_data->data_articulos), 1, all_data->data_files.file_articulos);
 
     fclose(all_data->data_files.file_articulos);
@@ -2528,7 +2530,7 @@ extern bool buscar_cantidades(struct Conjunto_Datos *all_data, const int *numero
     return true;
 }
 
-extern void calcular_precios(struct Conjunto_Datos *all_data, const int *t_o_f, const int *proveedor)
+void calcular_precios(struct Conjunto_Datos *all_data, const int *t_o_f, const int *proveedor)
 {
     if (*t_o_f == 1)
     {
@@ -2540,8 +2542,6 @@ extern void calcular_precios(struct Conjunto_Datos *all_data, const int *t_o_f, 
             exit(EXIT_FAILURE);
         }
 
-        fseek(all_data->data_files.file_clientes, all_data->data_ventas.numero_cliente * sizeof(all_data->data_clientes), SEEK_SET);
-        fread(&all_data->data_clientes, sizeof(all_data->data_clientes), 1, all_data->data_files.file_clientes);
     }
     else
     {
@@ -2553,7 +2553,7 @@ extern void calcular_precios(struct Conjunto_Datos *all_data, const int *t_o_f, 
             exit(EXIT_FAILURE);
         }
 
-        fseek(all_data->data_files.file_proveedor, all_data->data_compras.numero_proveedor * sizeof(all_data->data_proveedores), SEEK_SET);
+        fseek(all_data->data_files.file_proveedor, (all_data->data_compras.numero_proveedor - 1) * sizeof(all_data->data_proveedores), SEEK_SET);
         fread(&all_data->data_proveedores, sizeof(all_data->data_proveedores), 1, all_data->data_files.file_proveedor);
     }
 
@@ -2566,15 +2566,24 @@ extern void calcular_precios(struct Conjunto_Datos *all_data, const int *t_o_f, 
     }
 
 
-    fseek(all_data->data_files.file_articulos, all_data->data_ventas.numero_articulo * sizeof(all_data->data_articulos), SEEK_SET);
+    fseek(all_data->data_files.file_articulos, (all_data->data_ventas.numero_articulo - 1) * sizeof(all_data->data_articulos), SEEK_SET);
     fread(&all_data->data_articulos, sizeof(all_data->data_articulos), 1, all_data->data_files.file_articulos);
 
     if (*t_o_f == 1)
     {
-        all_data->data_ventas.precio = (all_data->data_ventas.cantidad * all_data->data_articulos.precio_venta);
-        all_data->data_ventas.precio -= (all_data->data_ventas.precio * all_data->data_clientes.descuento_cliente);
+        while (fread(&all_data->data_clientes, sizeof(all_data->data_clientes), 1, all_data->data_files.file_clientes))
+        {
+            if (all_data->data_ventas.numero_cliente == all_data->data_clientes.numero_cliente)
+            {
+                all_data->data_ventas.precio = (all_data->data_ventas.cantidad * all_data->data_articulos.precio_venta);
+                all_data->data_ventas.precio -= (all_data->data_ventas.precio * all_data->data_clientes.descuento_cliente);
 
-        fclose(all_data->data_files.file_clientes);
+                fclose(all_data->data_files.file_clientes);
+
+                return;
+            }
+        }
+
     }
     else
     {
@@ -2588,7 +2597,7 @@ extern void calcular_precios(struct Conjunto_Datos *all_data, const int *t_o_f, 
 
 }
 
-extern void realizar_cambios_inventario(struct Conjunto_Datos *all_data)
+void realizar_cambios_inventario(struct Conjunto_Datos *all_data)
 {
     rewind(all_data->data_files.file_control_compras);
 
@@ -2596,7 +2605,7 @@ extern void realizar_cambios_inventario(struct Conjunto_Datos *all_data)
     {
         if (all_data->data_inventario.numero_compra == all_data->data_compras.id_compra)
         {
-            fseek(all_data->data_files.file_articulos, (all_data->data_compras.numero_articulo) * sizeof(all_data->data_articulos), SEEK_SET);
+            fseek(all_data->data_files.file_articulos, (all_data->data_compras.numero_articulo - 1) * sizeof(all_data->data_articulos), SEEK_SET);
             fread(&all_data->data_articulos, sizeof(all_data->data_articulos), 1, all_data->data_files.file_articulos);
 
             all_data->data_articulos.inventario += all_data->data_compras.cantidad; // Agrega a inventario
@@ -2610,7 +2619,7 @@ extern void realizar_cambios_inventario(struct Conjunto_Datos *all_data)
     }
 }
 
-extern bool buscar_proveedor_articulo(struct Conjunto_Datos *all_data, int *proveedor_encontrado)
+bool buscar_proveedor_articulo(struct Conjunto_Datos *all_data, int *proveedor_encontrado)
 {
     int i;
 
@@ -2622,7 +2631,7 @@ extern bool buscar_proveedor_articulo(struct Conjunto_Datos *all_data, int *prov
         exit(EXIT_FAILURE);
     }
 
-    fseek(all_data->data_files.file_articulos, all_data->data_compras.numero_articulo * sizeof(all_data->data_articulos), SEEK_SET);
+    fseek(all_data->data_files.file_articulos, (all_data->data_compras.numero_articulo - 1) * sizeof(all_data->data_articulos), SEEK_SET);
 
     fread(&all_data->data_articulos, sizeof(all_data->data_articulos), 1, all_data->data_files.file_articulos);
 
@@ -2641,7 +2650,7 @@ extern bool buscar_proveedor_articulo(struct Conjunto_Datos *all_data, int *prov
     return false;
 }
 
-extern bool es_bisiesto(const int *year)
+bool es_bisiesto(const int *year)
 {
     if ( (*year) % 4 == 0 && ((*year) % 100 != 0 || (*year) % 400 == 0) )
 
@@ -2650,7 +2659,7 @@ extern bool es_bisiesto(const int *year)
     return false;
 }
 
-extern bool mes_30_dias(const int *month)
+bool mes_30_dias(const int *month)
 {
     switch (*month)
     {
@@ -2670,7 +2679,7 @@ extern bool mes_30_dias(const int *month)
     }
 }
 
-extern bool dia_valido(const int *day, const int *month, const int *year, const int *t_o_f)
+bool dia_valido(const int *day, const int *month, const int *year, const int *t_o_f)
 {
     int current_year, current_month, current_day;
     time_t tiempo = time(NULL);
@@ -2718,7 +2727,7 @@ extern bool dia_valido(const int *day, const int *month, const int *year, const 
 
 }
 
-extern void convertir_cadena_a_minuscula(char *caracter)
+void convertir_cadena_a_minuscula(char *caracter)
 {
     while (*caracter != '\0')
     {
@@ -2730,7 +2739,7 @@ extern void convertir_cadena_a_minuscula(char *caracter)
     }
 }
 
-extern bool verificar_existencia_claves(FILE *file, const char *dir, int *clave, const int *t_o_f)
+bool verificar_existencia_claves(FILE *file, const char *dir, int *clave, const int *t_o_f)
 {
     struct Datos_Articulos articles;
     struct Datos_Clientes customers;
@@ -2753,7 +2762,7 @@ extern bool verificar_existencia_claves(FILE *file, const char *dir, int *clave,
     {
         case 1: // Articulos
 
-            fseek(file, (*clave) * sizeof(articles), SEEK_SET);
+            fseek(file, ((*clave) - 1) * sizeof(articles), SEEK_SET);
             fread(&articles, sizeof(articles), 1, file);
 
             fclose(file);
@@ -2780,14 +2789,15 @@ extern bool verificar_existencia_claves(FILE *file, const char *dir, int *clave,
 
         case 3: // Proveedores
 
-            fseek(file, (*clave) * sizeof(suppliers), SEEK_SET);
+            fseek(file, ((*clave) - 1) * sizeof(suppliers), SEEK_SET);
             fread(&suppliers, sizeof(suppliers), 1, file);
 
-            fclose(file);
 
             if (suppliers.numero_proveedor == (*clave))
-
+            {
+                fclose(file);
                 return true;
+            }
 
             break;
 
@@ -2826,7 +2836,7 @@ extern bool verificar_existencia_claves(FILE *file, const char *dir, int *clave,
     return false;
 }
 
-extern void imprimir_articulos(FILE *file, struct Datos_Articulos *data_articles, const char *dir, const int *proveedores_neto)
+void imprimir_articulos(FILE *file, struct Datos_Articulos *data_articles, const char *dir, const int *proveedores_neto)
 {
     int i;
 
@@ -2847,14 +2857,14 @@ extern void imprimir_articulos(FILE *file, struct Datos_Articulos *data_articles
             printf("%-30d ", data_articles->numero_articulo);
             printf("%-40s ", data_articles->descripcion_articulo);
             printf("%-35d ", data_articles->punto_reorden);
-            printf("%-30d ", data_articles->inventario);
+            printf("%-30ld ", data_articles->inventario);
 
             for ( i = 0; i < *proveedores_neto; i++)
             {
                 if (*(data_articles->numero_proveedor + i) != 0 && *(data_articles->precio_compra + i) != 0.0)
                 {
                     printf("%-20d ", *(data_articles->numero_proveedor + i));
-                    printf("%-20d ", *(data_articles->precio_compra + i));
+                    printf("%-20lf ", *(data_articles->precio_compra + i));
                 }
             }
 
@@ -2865,10 +2875,10 @@ extern void imprimir_articulos(FILE *file, struct Datos_Articulos *data_articles
     }
 }
 
-extern void venta_fecha(FILE *file, struct Datos_Control_Ventas *data_sell, const char *dir)
+void venta_fecha(FILE *file, struct Datos_Control_Ventas *data_sell, const char *dir)
 {
     int dia, mes, mes_actual;
-    bool venta_encontrada;
+    // bool venta_encontrada;
     const int file_ventas = 1;
     time_t tiempo = time(NULL);
     struct tm *time = localtime(&tiempo);
@@ -2916,11 +2926,10 @@ extern void venta_fecha(FILE *file, struct Datos_Control_Ventas *data_sell, cons
 
         } while (!dia_valido(&dia, &mes, NULL, &file_ventas));
 
-        venta_encontrada = 
     }
 }
 
-extern bool buscar_proveedores(const int *proveedor, const int *total_proveedores)
+bool buscar_proveedores(const int *proveedor, const int *total_proveedores)
 {
     int i;
 
@@ -2935,7 +2944,7 @@ extern bool buscar_proveedores(const int *proveedor, const int *total_proveedore
     return false;
 }
 
-extern bool validar_cadenas(const char *caracter)
+bool validar_cadenas(const char *caracter)
 {
     while (*caracter != '\0')
     {
@@ -2949,12 +2958,7 @@ extern bool validar_cadenas(const char *caracter)
     return true;
 }
 
-extern bool existencia_venta(FILE *, struct Datos_Control_Ventas *, )
-{
-
-}
-
-extern void liberar_memoria_salida_de_error(struct Directorios *dir)
+void liberar_memoria_salida_de_error(struct Directorios *dir)
 {
     fprintf(stderr, "NO SE PUDO OBTENER CORRECTAMENTE EL/LOS FICHERO/S. . .");
 
